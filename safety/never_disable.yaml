@@ -1,0 +1,216 @@
+# zentv hard denylist: packages zentv must never disable.
+#
+# Source of truth: ZENTV_BUILD_PROMPT.md (v3, 2026-11-26), section "Safety lists".
+# Evidence: docs/audit/SECURITY_AUDIT.md (section and finding IDs are cited per group).
+#
+# Rules for zentv/safety.py (Phase 2):
+#   * There is no override. No CLI flag, config value or environment variable can bypass an entry.
+#   * An entry is an exact package name or a glob (fnmatch, case-sensitive) on the full package name.
+#   * A group applies when its scope matches the connected TV: "all", a brand, a SoC, or a device
+#     directory under devices/. The device scope comes from the device profile, not from a flag.
+#   * Dynamic rules are evaluated against the live TV before every plan and every apply.
+#   * A refusal names the group and the reason, and the run stops before anything reaches the TV.
+
+schema: 1
+override: never
+
+groups:
+  - id: core
+    scope: all
+    source: "SECURITY_AUDIT.md §2.3 (cleanyourtv core list)"
+    reason: "Android may not boot or stay usable without these."
+    packages:
+      - android
+      - com.android.systemui
+      - com.android.shell
+      - com.android.phone
+      - com.android.settings
+      - com.android.tv.settings
+      - com.android.permissioncontroller
+      - com.google.android.permissioncontroller   # the name GMS builds ship (same §2.3 entry)
+      - com.android.packageinstaller
+      - com.google.android.packageinstaller
+      - com.android.ext.*                         # ext services / ext shared
+      - com.google.android.ext.*                  # the name GMS builds ship (same §2.3 entry)
+      - android.ext.services                      # bare name some builds use (same §2.3 entry)
+      - android.ext.shared
+      - com.android.providers.*
+      - com.android.modulemetadata                # module metadata
+      - com.google.android.modulemetadata
+      - com.google.android.overlay.modules*       # module overlays (same §2.3 entry)
+      - "*networkstack*"                          # prompt: "networkstack*"; real names start with com.
+
+  - id: google
+    scope: all
+    source: "ZENTV_BUILD_PROMPT.md v2; SECURITY_AUDIT.md §6, §7.8; D-CT-04"
+    reason: "Store, Play services, verification, WebView, and the stock home and setup wizard (boot loop reported on a Sony Bravia Google TV, D-CT-04)."
+    packages:
+      - com.android.vending                       # Play Store (also the package verifier on Play builds)
+      - com.google.android.gms                    # GMS core, includes Play Protect
+      - com.google.android.gsf                    # Google Services Framework
+      - "*verifier*"                              # package verifier, any vendor
+      - "*webview*"
+      - com.google.android.trichromelibrary
+      - com.google.android.apps.tv.launcherx      # Google TV home
+      - com.google.android.tvlauncher             # Android TV home
+      - com.google.android.tungsten.setupwraith   # setup wizard; also owns the saved Wi-Fi on some units
+
+  - id: dynamic
+    scope: all
+    source: "ZENTV_BUILD_PROMPT.md v2; couch-tv tv-home/tools/apply.sh:105-113 (concept); SECURITY_AUDIT.md CY-01"
+    reason: "Anything the TV may need at power-on, and every updater."
+    rules:
+      - check: answers_home
+        how: "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
+        note: "Every package listed is refused, including zentv itself."
+      - check: persistent_flag
+        how: "dumpsys package <pkg>: pkgFlags or flags contain PERSISTENT"
+      - check: name_glob
+        patterns:
+          - "*provision*"
+          - "*setupwizard*"
+          - "*.setup"
+          - "*ota*"                               # OTA / system update. Known false positive: com.tcl.bootadservice
+                                                  # (boot ads) also matches; it stays refused (safe side, SECURITY_AUDIT.md §8.7).
+                                                  # Owner (2026-11-26): revisit at Checkpoint 4 once the TCL survey shows
+                                                  # whether the package exists; until then it stays refused.
+          - "*updater*"
+          - "*systemupdate*"
+          - "*[Vv]ersion[Uu]pdate*"               # matching is case-sensitive: TCL's updater is com.tcl.versionUpdateApp
+
+  - id: sony
+    scope: {brand: sony}
+    source: "SECURITY_AUDIT.md §7.8; cleanyourtv examples/sony-bravia-8-ii, sony-bravia-4k-vh21 (as data); couch-tv apply.sh"
+    reason: "Sony system service, Live TV and input apps, network settings, IME proxy, IR blaster and remote setup."
+    packages:
+      - com.sony.dtv.sonysystemservice
+      - com.sony.dtv.tvx
+      - com.sony.dtv.tvlin
+      - com.sony.dtv.smartui
+      - com.sony.dtv.networksettings
+      - com.sony.dtv.imeproxy
+      - com.sony.dtv.irblaster
+      - com.sony.dtv.irbservice
+      - com.uei.quicksetsdk
+
+  - id: sony-mediatek
+    scope: {brand: sony, soc: mediatek}
+    source: "SECURITY_AUDIT.md §7.8; cleanyourtv docs/devices/sony-k-55xr35m2.md (as data)"
+    reason: "MediaTek TV middleware: HDMI, TV input service, Live TV."
+    packages:
+      - com.mediatek.*                            # incl. com.mediatek.external, com.mediatek.tis, com.mediatek.tv.oneworld.tvcenter
+
+  - id: device-network
+    scope: {device: sony-bravia-4k-vh21}
+    source: "devices/sony-bravia-4k-vh21/PROFILE.md (Network); SECURITY_AUDIT.md D-CY-01"
+    reason: "Built-in and USB Ethernet and Wi-Fi must stay usable. Disabling these two agents broke USB Ethernet on BRAVIA_VH2 (cleanyourtv #3608)."
+    packages:
+      - com.sonyericsson.idd.agent
+      - com.sony.dtv.sonybugreportsys
+      - "*wifi*"
+      - "*ethernet*"
+      - "*networkstack*"
+      - "*tethering*"                             # network-stack family
+      - "*captiveportal*"                         # network-stack family
+      - "*.resolv"                                # DNS resolver module (network-stack family)
+
+  - id: device-tuner
+    scope: {device: sony-bravia-4k-vh21}
+    source: "devices/sony-bravia-4k-vh21/PROFILE.md (Tuner/antenna)"
+    reason: "Antenna use is unknown: every tuner input stays enabled."
+    packages:
+      - com.sony.dtv.tvinput.*
+      - com.mediatek.dtv.tvinput.*
+
+  - id: device-features
+    scope: {device: sony-bravia-4k-vh21}
+    source: "devices/sony-bravia-4k-vh21/PROFILE.md (Features in active use)"
+    reason: "Remote and voice button, phone remote, casting, Assistant and AirPlay/HomeKit are in daily use."
+    packages:
+      - com.google.android.tv.remote.service      # Google TV phone remote
+      - com.google.android.katniss                # Google Assistant / voice search
+      - com.google.android.apps.mediashell        # Chromecast built-in
+      - com.vewd.core.service                     # AirPlay crash-loops without it (cleanyourtv sony-bravia-4k-ur3)
+    # Phase 3 adds every package the survey maps to remote, voice, casting, AirPlay/HomeKit or
+    # Bluetooth. Candidates from reference data, NOT yet confirmed on this TV:
+    #   com.sony.dtv.airplayapp, com.sony.dtv.homekit, com.sony.dtv.voicesearch,
+    #   com.sony.dtv.assistantadapter, com.android.bluetooth, com.sony.dtv.tvapi,
+    #   com.sony.dtv.braviasync*, com.sony.dtv.settingsprovider
+
+  # ---- TCL (second zentv TV: TCL 75S450G). Evidence: SECURITY_AUDIT.md §8.6-8.7. ----
+  # Reference data is from sibling units (cleanyourtv @ be608705, read as data), not from this TV.
+
+  - id: tcl
+    scope: {brand: tcl}
+    source: "SECURITY_AUDIT.md §8.6; cleanyourtv examples/tcl-g03-google-tv/debloat.txt:353-358, tcl-55s450g/debloat.txt:28-33, tcl-g03-google-tv/debloat.txt:60-63 (as data)"
+    reason: "TCL Live TV/tuner/HDMI, the Input key's source panel, TCL settings and system server, the remote (Bluetooth RCU, auto-pair), keyboard, and firmware updates."
+    packages:
+      - com.tcl.tv                                # Live TV / HDMI
+      - com.tcl.tvinput                           # tuner, HDMI/AV inputs
+      - com.tcl.suspension                        # Quick panel and the Input key's source panel
+      - com.tcl.settings
+      - com.tcl.system.server
+      - com.tcl.providers.config
+      - com.tcl.initsetup
+      - com.tcl.factory.view
+      - com.tcl.tcl_bt_rcu_service                # Bluetooth remote
+      - com.tcl.autopair                          # remote pairing
+      - com.tcl.inputmethod.international         # keyboard
+      - com.tcl.versionUpdateApp                  # firmware updates (CY-01 class; 7 TCL lists disable it, D2-CY-03)
+      - com.tcl.xian.StartandroidService          # TCL's updater needs it for the device number (tcl-g03-google-tv:60-63).
+                                                  # It also reports usage; owner chose to protect it (2026-11-26).
+
+  # The three device groups below follow the owner's confirmed TCL answers (2026-11-26).
+  - id: tcl-g03-beyondtv4-network
+    scope: {device: tcl-g03-beyondtv4}
+    source: "devices/tcl-g03-beyondtv4/PROFILE.md (Network)"
+    reason: "Wi-Fi today; built-in Ethernet must stay usable."
+    packages:
+      - "*wifi*"
+      - "*ethernet*"
+      - "*networkstack*"
+      - "*tethering*"
+      - "*captiveportal*"
+      - "*.resolv"
+
+  - id: tcl-g03-beyondtv4-tuner
+    scope: {device: tcl-g03-beyondtv4}
+    source: "devices/tcl-g03-beyondtv4/PROFILE.md (Tuner/antenna: in use)"
+    reason: "Antenna, Live TV and HDMI are in use."
+    packages:
+      - com.tcl.tv
+      - com.tcl.tvinput*
+      - "*tvinput*"                               # any vendor TV input service on this set
+    # Phase 3 adds every package `dumpsys tv_input` lists as an input service.
+
+  - id: tcl-g03-beyondtv4-features
+    scope: {device: tcl-g03-beyondtv4}
+    source: "devices/tcl-g03-beyondtv4/PROFILE.md (Features in active use)"
+    reason: "TCL remote and voice button, phone remote, casting and AirPlay/HomeKit are in daily use."
+    packages:
+      - com.google.android.tv.remote.service      # Google TV phone remote (7 TCL lists disable it, CY-02)
+      - com.google.android.katniss                # Google voice / Assistant
+      - com.google.android.apps.mediashell        # Chromecast built-in
+      - com.google.android.apps.tv.dreamx         # hosts Google TV's Google Home panel (lights), in use
+    # Phase 3 adds every package the survey maps to remote, voice, casting, AirPlay/HomeKit or
+    # Bluetooth. Not yet known for TCL: the AirPlay/HomeKit package names, com.android.bluetooth.
+
+never_start:
+  - package: mediatek.factorymenu.ui
+    reason: "Factory menus can flip flags the shell cannot undo (cleanyourtv PROMPT.md, as data)."
+  - package: com.tcl.factory.view
+    reason: "TCL factory menu (same reason)."
+
+# Not refused, but never in a default plan: the planner marks these risk: high, default off, and
+# asks for each one by name with the reason shown. Proposed at Checkpoint 2.
+high_risk:
+  - scope: {brand: tcl}
+    source: "SECURITY_AUDIT.md §8.6-8.7"
+    packages:
+      - name: com.tcl.usercenter
+        reason: "A 43C641 (AR11) rebooted on every standby wake with it disabled (cleanyourtv #3533); a 65P735 did not."
+        decided: "Owner (2026-11-26): stays risk: high, asked by name; the TCL smoke test then checks a standby wake."
+      - name: com.google.android.apps.tv.dreamx
+        reason: "Hosts Google TV's Google Home panel. Refused on the zentv TCL (panel in use); high risk on other TCLs."
+    # com.tcl.partnercustomizer / com.tcl.waterfall.overseas were high risk only for the TCL Channel button,
+    # which the owner does not use (2026-11-26): ordinary candidates, reviewed at Checkpoint 4.
