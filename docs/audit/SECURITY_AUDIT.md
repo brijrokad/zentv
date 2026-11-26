@@ -12,6 +12,8 @@ All findings apply to these two commits only. Neither repo should be tracked aut
 
 **Delta audit, 2026-11-10:** §7 covers the new upstream commits up to cleanyourtv `deba47ca1eac7abe3fef0f73ddaf5ae6fb86c1af` (+368 commits) and couch-tv `bb02fc41c6996ea45ff64d715b04674a85022e68` (+160 commits). Sections 1–6 still describe the audited commits, except for the signing correction marked in CY-04.
 
+**Delta audit #2, 2026-11-26:** §8 covers cleanyourtv `deba47ca` → **`be6087056a1c7d4f08f3f1cc778d92374d86ef27`** (+1,322 commits) and couch-tv `bb02fc41` → **`bc5df03a8e1cbee2e99163198e96df92a2a32074`** (+1,087 commits). **These are the current pins.** Later phases read the references at these commits only.
+
 ---
 
 ## 1. Summary
@@ -387,7 +389,181 @@ Every `gradle-wrapper.properties` points at `https://services.gradle.org` and se
 
 1. VirusTotal or upstream comparison for the 3 new Roku TTF hashes in §7.7. The wrapper jar already matches Gradle.
 2. If you want the boot-loop evidence first-hand: read couch-tv's GitHub issues about the Sony loop, and cleanyourtv #3608 (Ethernet). The repos only paraphrase them.
-3. **Clone state.** If the clones should sit on the audited commits, run `git -C ~/forgelab/reference/cleanyourtv switch --detach d451b175` and `git -C ~/forgelab/reference/couch-tv switch --detach ff2cfbf` yourself, or ask me to. Until then, anything that opens those folders (an IDE indexer, an agent reading `CLAUDE.md`) sees the unaudited tips.
+3. **Clone state.** If the clones should sit on the audited commits, run `git -C ~/forgelab/reference/cleanyourtv switch --detach d451b175` and `git -C ~/forgelab/reference/couch-tv switch --detach ff2cfbf` yourself, or ask me to. Until then, anything that opens those folders (an IDE indexer, an agent reading `CLAUDE.md`) sees the unaudited tips. *(Superseded by §8: the clones were pulled again and §8 audits the new tips.)*
+
+---
+
+## 8. Delta audit #2 (2026-11-26)
+
+### 8.1 Scope and clone state
+
+| | cleanyourtv | couch-tv |
+|---|---|---|
+| Audited → new | `deba47ca` → **`be608705`** (2026-11-26 22:29 +0530) | `bb02fc41` → **`bc5df03a`** (2026-11-27 03:20 +1100) |
+| New commits | 1,322 (565 merges) in 16 days | 1,087 (250 merges) in 17 days |
+| Diff | 817 files, +40,196 / −2,157. 387 added, 427 changed, 2 deleted, 1 renamed. | 1,088 files, +192,378 / −3,090. 946 added, 139 changed, 3 deleted. |
+| History | Fast-forward from `deba47ca` (reflog `pull: Fast-forward` 2026-11-26 16:10 −0500) | Fast-forward from `bb02fc41` (2026-11-26 16:11 −0500) |
+| Biggest areas | `examples/` (42%), `tests/`, `addons/` (4 new), `launcher/`, `tools/` | **New top-level dirs `setup-app/`, `standalone/`, `titan/`, `tvos/`, `vega/`**. On-TV **Matter module with prebuilt native code**. `tests/`, `tv-home/web`, `bridge/`. |
+
+**Clone state.** The user pulled both clones to the new tips on `main`. I made no checkout, fetch or write. All reading went through git objects and `git archive` extracts in a scratch directory. `git status --porcelain` was empty, and HEAD was `be608705` / `bc5df03a`, both before and after.
+
+**Method.** The Phase 0 / §7 checks were re-run on the delta:
+- Pattern scans over **added lines only**.
+- Magic-byte and appended-data checks on every new image and font.
+- Manifest and accessibility-config diffs, old tree against new.
+- The `examples/` critical-package sweep, old against new, plus a Sony and a **TCL** breakdown.
+- osv-scanner on new or changed lockfiles, and the OSV API for Gradle coordinates.
+- gitleaks on the two commit ranges, plus a raw `gpgsig` survey.
+
+New for this delta:
+- ELF inspection of the Matter `.so` files (`objdump -p`, strings).
+- Jar class listings.
+- A byte-for-byte comparison of all 77 Matter PAA certificates with upstream connectedhomeip at the pinned commit (git blob hashes via the GitHub contents API).
+
+Deep reads:
+- cleanyourtv: `tools/` (recovery, disable/restore, adb-closed, tv.py), `launcher/` (HomeKeyService, build-and-install), and every Sony and TCL list and device note that changed or is relevant to the two zentv TVs.
+- couch-tv: the Matter module, `setup-app/`, `tv-home` (manifest, `MainActivity` WebView, `WatchRepair`, `SpotifyMediaListener`, `AccountLink`), `on-tv` (`Adb.kt`, `PlayRules`, `HomeKey*`, Matter routes), bridge auth, workflows, `AGENTS.md`, and the LG, Samsung, standalone and Roku additions.
+
+### 8.2 Verdict
+
+- **No malware in either delta.**
+  - No obfuscation, no encoded payloads, no download-and-execute chains.
+  - No Trojan Source. couch-tv's 78 bidi hits are all inside string literals: balanced U+2066/U+2069 isolates for display text, and U+202E in tests that check name sanitizing.
+  - gitleaks finds no secrets in either range.
+  - Every new image and font has valid magic bytes and nothing appended.
+  - Every new Gradle wrapper matches the official jar.
+  - All 77 Matter certificates are byte-identical to upstream.
+- **Both verdicts stand.**
+  - cleanyourtv: **Safe with caveats**. Its core path changes are all hardening.
+  - couch-tv: **Safe with caveats. Learn from the design only. Do not deploy its bridge, on-TV app or TV home.**
+  - CT-01, CT-02 and CT-03 are unchanged or broader. D-CT-03 (Home-watch self-revival) gets stronger with a periodic job (D2-CT-03).
+  - couch-tv now ships **prebuilt native code** built on the maintainer's own machine (D2-CT-01). It's consistent with its stated source, but it can't be reproduced or verified from the repo.
+- **Impact on zentv** (§8.7):
+  - **TCL evidence lands directly on the second zentv TV.**
+    - TCL's boot manager blocks accessibility services unless the app holds an `APP_AUTO_START` / `AUTO_START` appop.
+    - On the G03 platform, the remote's app buttons depend on `launcherx`.
+    - The only same-platform report that kept `launcherx` enabled took Home with a **window-watching** redirect. zentv's rule 9 forbids window watching.
+  - **Sony**: cleanyourtv's `stock_home_redirect` code documents a `launcherx` race on a Sony XR-55X90K that a key-filter-only helper can't see.
+
+### 8.3 Status of earlier findings
+
+| ID | Was | Now | What changed (at the new pins) |
+|---|---|---|---|
+| CY-01 | Medium | Medium | Broader OTA regex this time: 68 lists. New since `deba47ca`: `chiq-u43qm8v` (`com.homwee.upgrade`). Removed: `skyworth-65a3f`. **7 TCL lists disable `com.tcl.versionUpdateApp`** (§8.6). |
+| CY-02 | Medium | Medium | Still 23 lists disable `tv.remote.service`, **7 of them TCL** (`tcl-32s5k`, `tcl-40s5400a`, `tcl-55s470g`, `tcl-65ep640`, `tcl-75a300-pro`, `tcl-beyondtv2-android-11`, `tcl-g09-google-tv`) |
+| CY-03 | Medium | Medium | `PROMPT.md`, `CLAUDE.md`, `GEMINI.md` unchanged. `AGENTS.md` has a one-line table edit only. |
+| CY-04 | Medium | Medium | Velocity is higher (D2-CY-05). `.github/` changed only in the PR template, so `maintainer-bot.yml` is unchanged. |
+| CY-05 | Medium | **Low** | `tools/requirements-perf.txt` now pins `pillow==13.0.0` (no advisories). `cryptography>=46.0.7` still floats. No hashes. |
+| CY-06 | Medium | Medium | Unchanged. New device notes again mention `setprop persist.*`, `pm clear`, `pm hide` and `pm suspend` as **docs only** (e.g. `docs/devices/skyworth-70a9.md:99,177`, `examples/redmi-mitv-antl0/debloat.txt:50-51`). |
+| CY-07 | Low | Low | Launcher manifest unchanged. `config.xml` adds a TCL settings component and `volume_pauses_filter`. |
+| CY-09 | Low | Low | Still true. The TCL install path writes appops and the accessibility list outside the recovery record (D2-CY-02). |
+| CY-08, CY-10–17 | Low/Info | unchanged | – |
+| D-CY-01 | Medium | Medium | Now **34 Sony lists** disable `sonybugreportsys` and/or `idd.agent`. New: `sony-kd-55x80j/debloat.txt:46-47` (VH2, China build). |
+| D-CY-02 | Medium | Medium | 117 lists disable a stock Google home (was 106) and 175 disable `setupwraith` (was 160). New ones include **`tcl-55s450g`**, the sibling of the zentv TCL (§8.6). |
+| CT-01 | High (partly mitigated) | High (partly mitigated) | Bridge default unchanged: `BIND_HOST` defaults to `0.0.0.0` (`bridge/server.py:6111`), `PAIRING_KEY` empty means no auth (`bridge/config.py:61`, `server.py:326-328`), `Origin: null` allowed (`server.py:275-281`). Dozens of new routes, including `/api/matter/*`, `/api/phone/inbox`, `/api/spotify/*`, `/api/appletv/*`. **Mitigated in one path:** the new desktop setup helper generates a pairing key (`setup-app/couchtv_setup/helper/config.py:96`). |
+| CT-02 | High | High | GitHub flavour unchanged: `selfEnableWireless` re-enables `adb_wifi_enabled` (`on-tv/.../Adb.kt:240,298-304`). The new **Play flavour** turns that and the self-grants off (D2-CT-09). |
+| CT-03 | Medium | Medium (broader) | Still cleartext (`usesCleartextTraffic=true`, tv-home manifest `:133`), and the pairing key is still in the page URL (`MainActivity.kt:552-558`). **Four** JS bridges now: `TVOS`, `TVHA`, **`TVMATTER`** (commission and control smart-home devices) and `TVUP` (`MainActivity.kt:579-582`). New: navigation is limited to the same host's `/tv/` path (`:605-608`). |
+| CT-04 | Medium | Medium | APKs are still built off-CI (CI builds test APKs only, `build.yml:2-5`). New: the setup app is built **on CI**, and its updater checks an **Ed25519 signature made with an offline key** (`setup-app/couchtv_setup/helper/update.py:1-27`). That's a better pattern than the APK updater. |
+| CT-05 / D-CT-03 | High | **High (broader)** | `fire_watch.xml` still has `canRetrieveWindowContent="true"`. Plus the periodic `WatchRepair` job (D2-CT-03). |
+| CT-06 | Medium | Medium | Unchanged |
+| CT-07 | Medium | Medium | Unchanged in the bridge. The Ask feature now also takes keys for OpenAI, Groq, Mistral, Gemini and OpenRouter (D2-CT-08). |
+| CT-08 | Medium | Medium | `bridge/requirements.txt` still has no lockfile. It adds `Pillow==12.0.0` (100 OSV advisories, max 9.8), `airtouch5py==0.5.0` and floating `cryptography>=40.0.2`. |
+| CT-09 | Medium | Medium | "## 0. Before you start (quietly)" is still at `AGENTS.md:43`, and the pre-consent download and "do not use brew/sudo" lines are still there (`:47-61`). +239 lines of new platform guidance, mostly "wait for the yes" and "never root" rules. |
+| CT-11 | Low | Low | JitPack still in place (`on-tv/android/settings.gradle.kts:9`). `bcpkix 1.81` still has CVE-2026-5588. New: `conscrypt-android 2.5.3` (no advisories). `org.json 20240303` has CVE-2026-59171, but it's **test-only**. |
+| CT-12 | Low | Low (improving) | The new `setup-app.yml` pins every action by SHA. `build.yml` still uses tags. |
+| D-CT-04 | Medium | Medium | Refusal set unchanged. Still re-enables stock homes. |
+| D-CT-05 | Medium | Medium | `sync/` unchanged |
+| D-CT-06 | Medium | Medium | `TclPlaceholderInput` unchanged (manifest `enabled=false`, switched on for TCL only). The on-TV app also runs `appops set <pkg> AUTO_START allow` on TCL (`on-tv/.../HomeKey.kt:265`, `HomeKeyRules.kt:57-67`). |
+| D-CT-14 | Info | Info | CrashGuard still there. Still a good pattern. |
+
+### 8.4 New findings: cleanyourtv
+
+| ID | Severity | File:line @ `be608705` | Finding | Recommendation |
+|---|---|---|---|---|
+| D2-CY-01 | **Medium** (for zentv) | `launcher/.../HomeKeyService.java` (`redirectFromStockHome`, `REDIRECT_RECHECK_MS`); `launcher/build-and-install.sh` (`STOCK_LAUNCHER=none`, `KEEP_STOCK_HOME`); commits `7b3c5465`, `5c10cccf` | cleanyourtv now formally supports **keeping the stock home enabled** (`STOCK_LAUNCHER=none` + `stock_home_redirect`), which is zentv's model. But the redirect **watches windows**: it reacts to the stock home's activity coming up, then **looks again twice at 1.2 s**. Reason: on a Sony XR-55X90K, `launcherx` restarts its own home ("Background timeout reached") just after a Home press and lands over the redirect. A key-filter-only helper (zentv rule 9) can't see that second start. | Spike M3a must test this race on the X80K: Home after zentv has sat in the background for a while. Rule 9 stays as it is. Consequences are in EVALUATION §6. |
+| D2-CY-02 | Low | `launcher/build-and-install.sh:268-277`, `build-and-install.ps1:211-212` | On TCL the install sets **both** `AUTO_START` and `APP_AUTO_START` appops, runs `appops write-settings`, then **clears and re-adds** `enabled_accessibility_services` and toggles `accessibility_enabled`, because `TclAppBoot` won't bind the helper otherwise and the grant is lost at the next reboot. None of this goes into the recovery record (CY-09). | If zentv adopts a TCL appop step, it must be snapshotted and reverted, and appear in the dry-run preview |
+| D2-CY-03 | **Medium** (for zentv) | TCL lists, see §8.6 | Several TCL lists disable things the same-platform notes say to keep: `com.tcl.versionUpdateApp` (7 lists), `com.tcl.suspension` (4: `tcl-32es570f:43`, `tcl-50p735:32`, `tcl-75p635:46`, `tcl-g05-google-tv:62`), `com.tcl.initsetup` (`tcl-g09-google-tv:43`), `tv.remote.service` (7 lists), `launcherx` (25 lists, **including `tcl-55s450g`**) and `setupwraith` (45 lists). `com.tcl.usercenter`, disabled in 57 TCL lists, rebooted one 43C641 on every standby wake (#3533). | Never import TCL lists wholesale. These entries become TCL `never_disable` or `risk: high` (§8.7). |
+| D2-CY-04 | Info | `tools/adb-closed.py` | Now **greets an open port with ADB's CNXN message** and reads the 24-byte header (CNXN/AUTH/STLS = ADB). That separates network ADB from other open TV ports (casting, the JointSpace API). It never sends a key, so it can't trigger the "Allow USB debugging?" prompt. | Adopt this concept in `zentv adb-close` |
+| D2-CY-05 | Info | git history | 1,322 commits in 16 days from 215 author emails, **182 new to the repo**. One new contributor (`xbsheng`) made 196 commits. The maintainer made 562 of 565 merges, unsigned. 112 commits are signed (83 committed by GitHub web-flow). 2 local-machine identities. | Supports CY-04: snapshot only, re-audit on every pull |
+| D2-CY-06 | Info | `addons/{floating-clock,hindi-panchang,hindu-calendar,winter-cabin}` | Four new add-ons. **No permissions.** Each is a dream service bound with `BIND_DREAM_SERVICE` plus a launcher activity, with the official Gradle 8.9 wrapper. The `floating-clock` font is the same Outfit build as the launcher. | – |
+| D2-CY-07 | Info | `launcher/.../values/config.xml` (`volume_pauses_filter`); `docs/devices/tcl-55p71b-g09-key-repeat.md` | More key-repeat evidence. On a TCL G09 (Amlogic, Google TV 12), **any** bound key-filtering service makes held volume move one step per press. Xiaomi MOEU0 and Google TV 14 show the same. On the G03 (Realtek), held volume still ramped, "a little slower" (`examples/tcl-g03-google-tv/debloat.txt:96`). | Smoke test: held Volume on both TVs with the helper bound |
+
+### 8.5 New findings: couch-tv
+
+| ID | Severity | File:line @ `bc5df03a` | Finding | Recommendation |
+|---|---|---|---|---|
+| D2-CT-01 | **Medium** | `on-tv/android/matter/{jni,libs}/*`, `README.md`, `VERSION`, `SHA256SUMS`; linked into **both** APKs (`tv-home/android/app/build.gradle.kts:66-71,160`, `on-tv/android/app/build.gradle.kts:55-60,79`) | **Prebuilt native code.** `libCHIPController.so` (arm64 12.3 MB, armv7 6.4 MB), NDK `libc++_shared.so`, two x86 placeholder `.so` files and 6 Matter jars. The README says they're built from connectedhomeip **`v1.6.1.0` @ `3bcdd56b`** with NDK 28.2 on the maintainer's own Mac (`scripts/matter/build-controller.sh … remote macbook`). Checks: the toolchain strings say NDK r28 clang 19.0.1; NEEDED libs are only `liblog`/`libc++_shared`/`libm`/`libdl`/`libc`; no unexpected URLs, paths or exec strings; jars contain only `chip.*` and `matter.*` classes; the x86 placeholders are 2-instruction stubs that nothing loads. **But** upstream publishes no Android binaries to compare against, and `SHA256SUMS` sits in the same repo (one trust root). So the binaries are consistent with the claim and **not verifiable**. | Never bundle or run these. zentv ships no native code. |
+| D2-CT-02 | Low | `on-tv/.../matter/Matter.kt:161`; `scripts/matter/build-controller.sh:144-145` | The Matter trust store loads **every** `.der` in `assets/matter-paa/`, including the two **test** PAAs (`Chip-Test-PAA-FFF1`, `Chip-Test-PAA-NoVID`). Their private keys are public in connectedhomeip, so a device with forged test attestation passes the attestation check. The other 75 are the production DCL mirror, **byte-identical to upstream**. | – (not relevant to zentv) |
+| D2-CT-03 | **High** (extends D-CT-03) | `tv-home/.../WatchRepair.kt:15-30`; manifest `WatchRepair` (`BIND_JOB_SERVICE`) | A **periodic JobService** (about every 15 minutes, survives restarts, **runs without the app open**) uses `WRITE_SECURE_SETTINGS` to switch `accessibility_enabled` back on and take its Home watch out of and back into `enabled_accessibility_services`, whenever the watch is listed but not bound. It leaves a watch alone once someone removes it from the list, but it overrides a global accessibility switch-off and firmware kills. The watch it revives can still read window content (`fire_watch.xml`). | Never in zentv (rule 9: no self-revival) |
+| D2-CT-04 | **Medium** | `tv-home/.../SpotifyMediaListener.kt:25-30`, manifest (exported, `BIND_NOTIFICATION_LISTENER_SERVICE`); `tv-home/tools/apply.sh:215,219,308`; `undo.sh:49-51` | The **TV home is now a notification listener**. That role gives it access to every notification, even though it's used only for Spotify media sessions. `apply.sh` grants it silently (`cmd notification allow_listener … \|\| true`), along with `GET_USAGE_STATS` and `WRITE_SECURE_SETTINGS`. `undo.sh` reverses the listener and the appop. | zentv: no notification listener. Keep-watching without invasive permissions only. |
+| D2-CT-05 | Low | `tv-home/web/designer-gate.js:21`, `design-code.js:1-17`, `tv-home/.../AccountLink.kt:1-20`, `setup-app/couchtv_setup/studio.py` | **New cloud service run by the maintainer** ("Couch TV Studio", `couchtv.joshuaseage.com` / `tvdesigner.sites.underseage.studio`). The TV pulls a design when someone types a code or shares, and sends its version, RAM and TV profile. Designs are treated as untrusted and sanitized. The setup app can push a per-TV **account-link token** to the TV by broadcast. It's kept out of backups and never given to the page. | Note for privacy comparison |
+| D2-CT-06 | Low | `setup-app/couchtv_setup/server.py:4-13,742-745,825`; `helper/autostart.py:1-3,34`; `requirements*.txt`; `.github/workflows/setup-app.yml:46-50,134,192-217` | **New desktop setup app.** The good parts: it binds **127.0.0.1 only** with a per-run secret, checks Host and Origin, pins its requirements by hash, builds on CI with SHA-pinned actions, verifies updates with Ed25519, and **switches ADB off at the end** (`steps.py:669-670`). The caveats: an opt-in LaunchAgent / HKCU Run / XDG autostart for the helper, an ad-hoc-signed macOS app, `cryptography 48.0.1` (6 advisories, max 8.7) and the helper's `pillow 12.0.0` (100 advisories, max 9.8). It still grants `WRITE_SECURE_SETTINGS`, `SYSTEM_ALERT_WINDOW`, `GET_USAGE_STATS`, `READ_TV_LISTINGS` and TCL `AUTO_START` (`steps.py:501-555,652-655`). | Patterns to reuse: localhost + secret + Host/Origin check, the signed-update model, closing ADB at the end |
+| D2-CT-07 | Low | `on-tv/android/app/src/main/AndroidManifest.xml` | The on-TV app adds `REQUEST_DELETE_PACKAGES`. tv-home adds `BLUETOOTH`/`BLUETOOTH_CONNECT` and `FromComputer`/`SetupLink` receivers protected by `DUMP` (ADB only). | – |
+| D2-CT-08 | Info | `tv-home/web/ask.js`, `on-tv/web/setup.html`, `on-tv/.../AskWire.kt`; `bridge/bookings.py:98`; `bridge/spotify_now.py`, `standalone/api/*`; `bridge/webdata.py`, `FotMobScores.kt`, `widget-web.js` | New endpoints and data flows. **User-supplied LLM keys** for `api.openai.com`, `api.groq.com`, `api.mistral.ai`, `generativelanguage.googleapis.com` and `openrouter.ai`, typed into a page served by the TV. **IMAP mailbox reading** (Airbnb bookings, TLS). Spotify OAuth (a serverless refresh-token helper). Yahoo Finance, FotMob, OSRM and iTunes lookups. | Note for privacy docs |
+| D2-CT-09 | Info (positive) | `on-tv/.../PlayRules.kt:1-60`; `on-tv/android/app/src/play/` | A **Google Play flavour** with no self-grants over ADB, no wireless-ADB re-enable, no TCL `AUTO_START`, no screenshots, no GitHub downloads and no Ask AI. Its Home watch is off until the user agrees to a disclosure and switches it on in Settings, and its watch declares `canRetrieveWindowContent=false`. This is close to zentv's rule 9. | Confirms that the Option B shape (user-enabled, no self-revival) is shippable |
+| D2-CT-10 | Info | `lg/helper/*.c`, `lg/on-tv/*`, `samsung/setup/install-windows.ps1:10-14`, `tvos/`, `vega/`, `titan/`, `standalone/` | New platforms. The LG helper grabs Magic Remote evdev input on rooted webOS, adapted under MIT from a cleanyourtv-LG fork (`lg/helper/LICENSE.cytv`). The Samsung installer downloads the Apps2Samsung CLI **pinned by SHA-256**. There's also a tvOS app (Swift), Vega and Titan OS shims, and Spotify serverless functions. | Not relevant to zentv |
+| D2-CT-11 | Info | git history | 1,087 commits from 64 author emails (61 new). The maintainer wrote 847. Merges: maintainer 243, **a second contributor 5**, plus 1 other, so the project is no longer single-maintainer. 6 signed commits. | Pin, re-audit on every pull |
+| D2-CT-12 | Info | `bridge/matter/package-lock.json`, `roku/package-lock.json` | Matter sidecar npm (176 packages, `matter-server 1.6.0`): **0 advisories**. Roku: dev-only `decode-uri-component 0.2.2` (2 advisories). | – |
+
+### 8.6 TCL evidence for the second zentv TV (read as data)
+
+The user's second TV is a **TCL 75S450G**. cleanyourtv has its 55" sibling and two lists on the same platform.
+
+| Fact | Source @ `be608705` |
+|---|---|
+| 55S450G = G03 / `BeyondTV4` / Realtek `rtd288o` (`RTD2851M`), Google TV 11 (SDK 30), build `RP1A.200622.001` `AR24`, **armeabi-v7a only** | `docs/devices/tcl-55s450g.md:15-25` |
+| Same platform: `tcl-55s546-us` (GTV93), `tcl-g03-google-tv` (AR09/AR11, 2 GB RAM, zygote32). "Do not copy either list onto this build." | same, `:13-14`; `examples/tcl-g03-google-tv/debloat.txt:165-168` |
+| `TclAppBoot` refused to bind an accessibility service until `appops set <pkg> APP_AUTO_START allow` + `appops write-settings`. `AUTO_START` is "Unknown operation string" on AR24. The grant survived a reboot and a power cut. | `docs/devices/tcl-55s450g.md` "`APP_AUTO_START`" |
+| With `launcherx` off and no helper, the remote's Netflix, YouTube, Prime, Apple, TCL Channel, gear and Input buttons did nothing. Re-enabling `launcherx` brought them back. An injected `KEYCODE_HOME` is **not** a valid test for the real Home button. | same, "launcherx off without a key helper" |
+| A same-platform 43P735 (#3949) **kept `launcherx`, `setupwraith`, the updater, the inputs and the remote services**. Home went to the custom launcher through **`stock_home_redirect` (window-watching)** + `home_long_press_home` + HomeKeyService, which needed `APP_AUTO_START`. "Google TV showed briefly first" after a reboot. | `examples/tcl-g03-google-tv/debloat.txt:347-351` |
+| TCL G03 DO-NOT-DISABLE: `com.tcl.tv`, `com.tcl.tvinput`, `com.tcl.suspension`, `com.tcl.settings`, `com.tcl.system.server`, `com.tcl.providers.config`, `com.tcl.initsetup`, `com.tcl.factory.view`, `com.tcl.tcl_bt_rcu_service`, `com.tcl.autopair`, `com.tcl.inputmethod.international`, `com.google.android.tv.remote.service` | `examples/tcl-g03-google-tv/debloat.txt:353-358`; `tcl-55s450g/debloat.txt:28-33` |
+| `com.tcl.xian.StartandroidService` is how TCL's updater gets the device number. With it off, Network Update fails. | `examples/tcl-g03-google-tv/debloat.txt:60-63` |
+| `dreamx` hosts Google TV's Google Home panel (lights) and loads its account through `launcherx`. "Apps only" mode also hides that panel on this firmware. | same, `:64-69` |
+| `com.tcl.usercenter` off: a 43C641 (AR11) rebooted on every standby wake (#3533). A 65P735 did not. | `tcl-55s450g/debloat.txt` comment; `tcl-g03-google-tv/debloat.txt:344-346` |
+| couch-tv: `com.tcl.guard` trims the custom home after start. A TCL on Android TV 11 starts Google home as `.home.VanillaModeHomeActivity`. TCL's boot controller opens Google home before any watch runs. | `docs/TV-COMPATIBILITY.md:151-158` |
+
+### 8.7 Impact on zentv
+
+**`never_disable` additions (TCL, hard refuse):**
+- `com.tcl.tv`, `com.tcl.tvinput*`, `com.tcl.suspension`, `com.tcl.settings`, `com.tcl.system.server`, `com.tcl.providers.config`, `com.tcl.initsetup`, `com.tcl.factory.view`, `com.tcl.tcl_bt_rcu_service`, `com.tcl.autopair`, `com.tcl.inputmethod.international`.
+- `com.tcl.versionUpdateApp` (firmware updates) and `com.tcl.xian.StartandroidService` (the updater needs it).
+- For the zentv TCL's features in use: `com.google.android.katniss`, `com.google.android.tv.remote.service`, `com.google.android.apps.mediashell`, and AirPlay/HomeKit packages once Phase 3 maps them. The existing `*webview*` glob already covers `com.tcl.android.webview`.
+
+**`risk: high`, off by default:** `com.tcl.usercenter` (#3533), `com.google.android.apps.tv.dreamx` (it hosts the Google Home panel), `com.tcl.partnercustomizer` + `com.tcl.waterfall.overseas` (the TCL Channel button needs both).
+
+**Launcher plan:**
+- On **TCL**, the Option B helper almost certainly needs a **TCL-only, snapshotted `appops set <zentv> APP_AUTO_START allow` + `appops write-settings`**. Rule 6 doesn't allow `appops set` today. That's a Checkpoint 2 decision (EVALUATION §7).
+- Expect power-on to land on Google TV on **both** TVs.
+- Never use the placeholder TV-input trick (D-CT-06).
+
+**Concepts to copy:** the ADB-greeting check in `adb-close` (D2-CY-04), and the setup app's localhost + secret + Host/Origin check and offline-key signed updates (D2-CT-06).
+
+### 8.8 New binaries (SHA-256)
+
+231 added, changed or renamed non-text files: 50 in cleanyourtv, 181 in couch-tv.
+- The 131 new or changed images and fonts are valid, with nothing appended. One more is a byte-identical rename (`themes/christmas/wallpaper.jpg` → `wallpapers/01-sleigh-night.jpg`).
+- The 4 couch-tv MP4 loops are valid ISO-BMFF, and their top-level boxes (`ftyp moov free mdat`) cover the whole file exactly.
+- The `.ico`/`.icns` icons have valid headers.
+- Also covered: 10 Gradle wrapper and Matter jars, 6 `.so` and 77 `.der`.
+- There is still **no** APK, AAR, DEX or archive.
+
+The full list is appended to [`binaries-sha256.txt`](binaries-sha256.txt) under "Delta audit #2 2026-11-26".
+
+| SHA-256 | File | Check |
+|---|---|---|
+| `498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17` | cyt `addons/{floating-clock,hindi-panchang,hindu-calendar,winter-cabin}/gradle/wrapper/gradle-wrapper.jar` | **MATCH** official Gradle 8.9. `distributionSha256Sum` `d725d707…cecab` (official), URL `services.gradle.org` |
+| `fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade` | cyt `addons/floating-clock/…/outfit.ttf` | Same as the launcher's Outfit (§4) |
+| `2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046` | ct `tv-home/android/gradle/wrapper/gradle-wrapper.jar` | **MATCH** official Gradle 8.11.1 (unchanged) |
+| `d11a86ea9516f3b09d819a577c28fe2cd5ffeb935bba256ee2d79bb13dcfa25b` | ct `on-tv/android/matter/jni/arm64-v8a/libCHIPController.so` | Consistent with the claim, not verifiable (D2-CT-01) |
+| `059881b074f02e6a2f44a867eefca71a79c529f27c36705e23826a07fde9124d` | ct `…/jni/armeabi-v7a/libCHIPController.so` | Same |
+| `cd61762848882a16c8244c964a6f396c0caa0b440588a210ce9cc4ab0e6d9f0c` / `e7e20f6e0f3f181e853cea50373ecee2ccfe95c668dce72d0999b2469c92d0e1` | ct `…/jni/{arm64-v8a,armeabi-v7a}/libc++_shared.so` | Should equal NDK r28c's own `libc++_shared.so` (manual check §8.9) |
+| 77 × `.der` | ct `on-tv/android/matter/assets/matter-paa/` | **All byte-identical** to connectedhomeip `3bcdd56b` (`credentials/production/paa-root-certs` + 2 test PAAs) |
+
+### 8.9 Manual checks added by delta #2
+
+1. **VirusTotal** for the 4 Matter `.so` hashes (§8.8). Optionally, compare the two `libc++_shared.so` files with the copies in Android NDK r28c (`toolchains/llvm/prebuilt/*/sysroot/usr/lib/{aarch64,arm}-linux-android*/libc++_shared.so`). zentv never uses them, so this only matters if you want certainty about couch-tv itself.
+2. **TCL first-hand:** if you want it, read cleanyourtv #3533 (usercenter standby reboot) and #3949 (43P735 kept `launcherx` with a redirect), and couch-tv #94 (TCL Home after restart).
+3. **Clone state:** both clones are on `main` at the §8 tips. To pin them, run `git -C ~/forgelab/reference/cleanyourtv switch --detach be608705` and `git -C ~/forgelab/reference/couch-tv switch --detach bc5df03a`. Don't pull again without a delta audit #3.
 
 ---
 
@@ -424,4 +600,30 @@ git fsck; git reflog
 gitleaks git <repo> --redact --report-path <scratch>; gitleaks dir <repo> --redact --report-path <scratch>
 ```
 
-Verification that the references were not modified: `git -C <repo> status --porcelain` was empty, and HEAD was unchanged (`d451b175`, `ff2cfbf`), both before and after the audit.
+Verification that the references were not modified: `git -C <repo> status --porcelain` was empty, and HEAD was unchanged before and after each pass:
+
+| Pass | cleanyourtv | couch-tv |
+|---|---|---|
+| Phase 0 (2026-11-07) | `d451b175` | `ff2cfbf2` |
+| Delta (2026-11-10) | `deba47ca` | `bb02fc41` |
+| **Delta #2 (2026-11-26), current baseline** | **`be608705`** | **`bc5df03a`** |
+
+**Delta audit #2 (2026-11-26).** Tools: ripgrep 14.1.1, gitleaks 8.30.1, osv-scanner 2.7.0, Python 3.11.10 (stdlib only, `-I`), git 2.54.0, OpenSSL 3.6.2, llvm `objdump`, `strings`, `shasum`, `file`, `curl` (OSV API and the GitHub contents API for the upstream connectedhomeip PAA listing only). Nothing from either repo was built, run, installed or sourced. Scripts were written fresh in the scratch directory and run with paths as arguments.
+
+```sh
+git -C <repo> archive <old|new> | tar -x -C <scratch>/x/<repo>-{old,new}          # read-only extracts
+git -C <repo> diff -U0 --text <old> <new> -- . ':!*.jpg' ... > <repo>.diff        # added lines only
+python3 -I addscan.py <repo>.diff <out> <tag>     # URLs/IPs, dl+exec, bidi, zero-width, blobs, out-of-repo writes, ADB state, steering
+python3 -I trailing.py <list> <tree>             # magic bytes + appended data (JPEG/PNG/WebP/WOFF2/TTF)
+python3 -I manifests.py <tree>                   # perms/exported/flags/accessibility configs, diffed old vs new
+python3 -I sweep.py <tree> [tcl semp-tcl | sony] # examples/ critical-package sweep
+objdump -p <so>; strings -n 8 <so>; unzip -Z1 <jar>; shasum -a 256 -c SHA256SUMS
+curl https://api.github.com/repos/project-chip/connectedhomeip/contents/credentials/{production/paa-root-certs,test/attestation}?ref=3bcdd56b...
+git hash-object <each .der>                      # compared with the upstream blob SHAs
+osv-scanner scan source --lockfile=<setup-app/requirements*.txt | bridge/matter/package-lock.json | roku/package-lock.json | requirements.txt:bridge/requirements.txt>
+curl -X POST https://api.osv.dev/v1/querybatch -d @maven-q.json                    # 12 Gradle coordinates
+gitleaks git <repo> --log-opts="<old>..<new>" --report-path <scratch>
+bash history.sh <repo> <old> <new>               # counts, authors, merge committers, raw gpgsig survey
+```
+
+Verification: `git -C <repo> status --porcelain` was empty, and HEAD was `be608705` / `bc5df03a`, before and after.
