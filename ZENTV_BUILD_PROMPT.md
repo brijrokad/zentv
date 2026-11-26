@@ -144,7 +144,7 @@ Propose, then scaffold after approval:
 
 ```
 zentv/
-├── zentv/                     # Python package; CLI via `uv run zentv ...`
+├── zenctl/                    # Python package (import zenctl); the command is still `zentv` (`uv run zentv ...`)
 │   ├── adb.py                 # subprocess wrapper: timeouts, dry-run, PACKAGE_RE validation, refuse-list enforcement
 │   ├── survey.py              # read-only inventory → JSON (redacted serials)
 │   ├── safety.py              # never_disable + dynamic rules + hard-refuse commands
