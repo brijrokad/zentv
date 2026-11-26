@@ -1,0 +1,11 @@
+#!/bin/sh
+# zentv pre-commit: secret scan of the staged change, then lint (ARCHITECTURE.md D8).
+# Install with scripts/install-hooks.sh. Never bypass with --no-verify for a real commit.
+set -eu
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found (brew install gitleaks). Refusing to commit unscanned." >&2
+  exit 1
+fi
+gitleaks git --pre-commit --staged --redact --no-banner .
+uv run --frozen ruff check .
+uv run --frozen ruff format --check .

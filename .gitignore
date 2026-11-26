@@ -37,3 +37,9 @@ coverage.xml
 .idea/
 *.swp
 .DS_Store
+
+# zentv: raw (unredacted) dumps never belong in the repo
+*.raw.json
+*.raw.txt
+adbkey
+adbkey.pub
