@@ -1,7 +1,7 @@
 # zentv — Build Prompt (v3, 2026-11-26)
 
 > Paste everything below the line into your coding agent (Claude Code) from inside `~/forgelab/zentv`.
-> v3 supersedes v2. It adds delta audit #2 (new reference pins, now the baseline), the re-run Phase 1 evaluation, a **second TV: TCL 75S450G** (device profile, safety lists, smoke test, and per-TV Phases 3, 5 and 7, Sony first), and the **Checkpoint 2 decisions** (rules 6 and 9, launcher stack, keep-watching, M3a test list). v2 included the Phase 0 audit, the 2026-11-10 delta audit, the Sony device profile and the Home-button decision.
+> v3 supersedes v2. It adds delta audit #2 (new reference pins, now the baseline), the re-run Phase 1 evaluation, a **second TV: TCL 75S450G** (device profile, safety lists, smoke test, and per-TV Phases 3, 5 and 7, TCL first), and the **Checkpoint 2 decisions** (rules 6 and 9, launcher stack, keep-watching, M3a test list). v2 included the Phase 0 audit, the 2026-11-10 delta audit, the Sony device profile and the Home-button decision.
 
 ---
 
@@ -101,17 +101,13 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
   - `com.tcl.tv`, `com.tcl.tvinput`, `com.tcl.suspension`, `com.tcl.settings`, `com.tcl.system.server`, `com.tcl.providers.config`, `com.tcl.initsetup`, `com.tcl.factory.view`, `com.tcl.tcl_bt_rcu_service`, `com.tcl.autopair`, `com.tcl.inputmethod.international`.
   - Firmware updates: `com.tcl.versionUpdateApp`, and `com.tcl.xian.StartandroidService`, which the updater needs.
   - Never start `com.tcl.factory.view`.
-- **TCL 75S450G (from the profile; provisional until the owner confirms the TCL feature and network answers):**
+- **TCL 75S450G (from the profile; owner answers confirmed 2026-11-26):**
   - Network: all Wi-Fi, Ethernet and network-stack packages.
   - Tuner: `com.tcl.tv`, `com.tcl.tvinput*`, and every input service `dumpsys tv_input` lists.
   - Features in use: `com.google.android.tv.remote.service`, `com.google.android.katniss`, `com.google.android.apps.mediashell`, and every package the Phase 3 survey maps to remote, voice, casting, AirPlay/HomeKit or Bluetooth.
-- **TCL `risk: high`, default off, asked by name:** `com.tcl.usercenter` (standby-wake reboot, #3533), `com.google.android.apps.tv.dreamx` (Google Home panel), `com.tcl.partnercustomizer` + `com.tcl.waterfall.overseas` (TCL Channel button).
-- **TCL decisions on hold** until the owner sends the TCL feature and network answers:
-  - Whether `com.tcl.xian.StartandroidService` stays in `never_disable` (it reports usage, but the updater needs it).
-  - Whether the `*ota*` glob's false positive on `com.tcl.bootadservice` stays.
-  - Whether `com.tcl.usercenter` stays `risk: high` or becomes never-disable.
-  
-  Until then, each stays at the safer setting shown above.
+- **TCL 75S450G, Google Home panel in use:** `com.google.android.apps.tv.dreamx` is refused on this TV.
+- **TCL `risk: high`, default off, asked by name:** `com.tcl.usercenter` (standby-wake reboot, #3533; the smoke test checks a standby wake) and, on other TCLs, `dreamx`. The TCL Channel button isn't used, so `com.tcl.partnercustomizer` and `com.tcl.waterfall.overseas` are ordinary candidates, reviewed at Checkpoint 4.
+- **Decided 2026-11-26:** `com.tcl.xian.StartandroidService` stays protected (firmware updates need it). The `*ota*` glob's false positive on `com.tcl.bootadservice` is revisited at Checkpoint 4, after the survey shows whether the package exists.
 
 ### Debloat targets (allowed, `risk: low` by default)
 
@@ -175,7 +171,7 @@ Requirements: dry-run by default, and `apply` refuses to run without a fresh sna
 
 ## Phase 3: Device discovery (read-only, once per TV)
 
-Run it separately for each TV, **Sony first**, one TV connected at a time, each ending with `adb-close`. After I confirm firmware is updated, debugging is on, and I give you the TV's IP:
+Run it separately for each TV, **TCL first** (owner's choice, 2026-11-26), one TV connected at a time, each ending with `adb-close`. After I confirm firmware is updated, debugging is on, and I give you the TV's IP:
 1. Connect and collect `ro.product.model`, `ro.product.device`, `ro.build.fingerprint`, Android version/SDK, Google TV vs Android TV (which home packages are present), Basic TV mode, the current HOME resolver, RAM/storage, and enabled/disabled packages with their installer.
 2. Map each feature in the device profile to its packages and mark them protected.
 3. Report whether any tuner channels are configured.
@@ -195,7 +191,7 @@ Run it separately for each TV, **Sony first**, one TV connected at a time, each 
 
 Implement `survey`, `plan`, `apply`, `restore`, `privacy`, `adb-close`, `smoke-test` with full fake-adb tests. Supervised first run: snapshot → dry-run → my OK → apply → reboot → smoke test → `adb-close`. Show me the restore command before we finish.
 
-Do the supervised run on one TV at a time, Sony first.
+Do the supervised run on one TV at a time, TCL first.
 
 **Smoke test, Sony (any failure means restore):** Sony remote including the voice button, the phone remote connects, casting from a phone, AirPlay from an Apple device, Assistant answers, Wi-Fi reconnects after a reboot, and (if a cable or adapter is available) Ethernet links.
 
@@ -204,6 +200,7 @@ Do the supervised run on one TV at a time, Sony first.
 - The remote's app buttons: Netflix, YouTube, Prime Video, Apple, TCL Channel, gear, Input.
 - A held Volume button ramps.
 - The phone remote connects. Casting from a phone. AirPlay from an Apple device.
+- Google TV's Google Home panel opens from quick settings and controls a light.
 - Live TV through the antenna, and an HDMI input plays.
 - Standby, then wake from the remote, with no reboot (uptime keeps counting, #3533).
 - Wi-Fi reconnects after a reboot, and Ethernet links if a cable is available.
@@ -214,7 +211,7 @@ Native Kotlin, D-pad first. Targets: **APK < 2 MB (MVP), cold start < 500 ms, mi
 
 Stack (decided): Kotlin + plain Views, `minSdk 30`, `targetSdk` ≥ 30, no NDK or native libraries (the TCL is armeabi-v7a only), no coroutines (`Handler`/`Executor`), no Leanback or Compose for the MVP.
 
-1. **Spike first (M3a), per TV, Sony first:** a minimal debug APK containing only the home-key helper (in `:homekey`) and a test activity. On each TV (with my OK), run the test list in `EVALUATION.md` §6.4, plus these required tests:
+1. **Spike first (M3a), per TV, TCL first:** a minimal debug APK containing only the home-key helper (in `:homekey`) and a test activity. On each TV (with my OK), run the test list in `EVALUATION.md` §6.4, plus these required tests:
    - **Real-remote Home only.** Never use an injected `KEYCODE_HOME` as evidence.
    - **Home after zentv has sat in the background for several minutes** (the `launcherx` restart race), with and without the re-check.
    - **Held Volume Up and Down ramp** with the helper bound.
@@ -222,7 +219,7 @@ Stack (decided): Kotlin + plain Views, `minSdk 30`, `targetSdk` ≥ 30, no NDK o
    - Pass-through + start-as-app vs. consume.
    - TCL: with and without the rule 6 app-op.
 
-   If it fails on a TV, stop and present options for that TV (Google TV "Apps only" mode + zentv as a normal app, or other ideas) before building more.
+   If it fails on a TV, stop and present options for that TV (Google TV "Apps only" mode + zentv as a normal app, or other ideas) before building more. On the TCL, "Apps only" mode also hides the Google Home panel, which is in use, so it's a costly fallback there.
 2. **MVP:** fast app row/grid, favorites, hide apps, **no `INTERNET` permission**, no location. `set-home-activity` plus the Option B helper.
    - **CrashGuard step-aside:** after 2 crashes or unsettled starts within 3 minutes, hand off to the stock home for 5 minutes (concept from D-CT-14).
    - **Vendor trim kills are not crashes.** CrashGuard counts only starts it recorded as crashed (its own uncaught-exception record) or unsettled. A process death with no crash record, such as a `com.tcl.guard` trim or a low-memory kill, is not counted.
@@ -237,7 +234,7 @@ Phase 1 (both runs) judged it not worth the risk: both TVs already have the Goog
 
 ## Phase 7: Measure and document
 
-`zentv bench` on **each TV** (Sony first) across three states: **stock** → **stock + "Apps only" mode + debloat** → **zentv**. Measure boot-to-home time, free RAM, home-screen jank (`dumpsys gfxinfo`), enabled package count, and active telemetry packages. Put the table in the README. Write `docs/restore.md`, `docs/troubleshooting.md` and `docs/smoke-test.md`.
+`zentv bench` on **each TV** (TCL first) across three states: **stock** → **stock + "Apps only" mode + debloat** → **zentv**. Measure boot-to-home time, free RAM, home-screen jank (`dumpsys gfxinfo`), enabled package count, and active telemetry packages. Put the table in the README. Write `docs/restore.md`, `docs/troubleshooting.md` and `docs/smoke-test.md`.
 
 ---
 
