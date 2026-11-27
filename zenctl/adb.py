@@ -33,6 +33,8 @@ class ShellResult:
 class Transport(Protocol):
     def shell(self, command: str, timeout: float) -> ShellResult: ...
 
+    def host(self, argv: list[str], timeout: float) -> ShellResult: ...
+
 
 class AdbTransport:
     """`adb -s <serial> shell <command>`; never shell=True on the Mac side."""
@@ -43,6 +45,10 @@ class AdbTransport:
 
     def shell(self, command: str, timeout: float) -> ShellResult:
         return run_host([self.adb, "-s", self.serial, "shell", command], timeout)
+
+    def host(self, argv: list[str], timeout: float) -> ShellResult:
+        """`adb -s <serial> <argv>` (install only, built by commands.install_apk)."""
+        return run_host([self.adb, "-s", self.serial, *argv], max(timeout, 180))
 
 
 def find_adb() -> str:
@@ -125,8 +131,12 @@ class Session:
             raise TypeError("only zenctl.commands.Command objects can be sent")
         s = cmd.shell_string()
         refuse.check(s, cmd.argv)
-        self.log.append(s)
-        res = self.transport.shell(s, self.timeout)
+        self.log.append(("adb " if cmd.host else "") + s)
+        res = (
+            self.transport.host(list(cmd.argv), self.timeout)
+            if cmd.host
+            else self.transport.shell(s, self.timeout)
+        )
         if check and res.returncode != 0:
             raise AdbError(
                 f"`{s}` failed (exit {res.returncode}): {(res.stderr or res.stdout).strip()[:300]}"

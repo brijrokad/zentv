@@ -1,6 +1,5 @@
 # zentv CI: lint, tests and a secret scan. Every action is pinned by commit SHA (ground rule 11,
-# SECURITY_AUDIT.md CT-12). No secrets are used and the token is read-only. The Gradle job for
-# launcher/ is added in M3, when that project exists.
+# SECURITY_AUDIT.md CT-12). No secrets are used and the token is read-only.
 name: ci
 
 on:
@@ -26,6 +25,30 @@ jobs:
           uv run ruff format --check .
       - name: Tests (fake TV only; no device)
         run: uv run pytest -q
+
+  launcher:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880  # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Verify the Gradle wrapper jar (official 9.9.2 checksum)
+        run: echo "621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8  launcher/gradle/wrapper/gradle-wrapper.jar" | sha256sum -c -
+      - name: Build the M3a spike (dependency verification on)
+        working-directory: launcher
+        run: ./gradlew --no-daemon assembleSpike
+      - name: No permissions, no native code in the spike APK
+        run: |
+          APK=launcher/app/build/outputs/apk/spike/app-spike.apk
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          perms=$("$AAPT2" dump permissions "$APK" | grep -c uses-permission || true)
+          libs=$(unzip -l "$APK" | grep -c '\.so$' || true)
+          echo "permissions=$perms native_libs=$libs"
+          test "$perms" = 0 && test "$libs" = 0
 
   secrets:
     runs-on: ubuntu-24.04

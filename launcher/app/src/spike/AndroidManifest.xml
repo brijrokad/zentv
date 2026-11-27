@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- M3a spike: a test activity plus the Home-key helper. Rule 9: key filter only, no window
+     content, no event types, no boot receiver, no self-enable, own process. No uses-permission. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:banner="@android:drawable/sym_def_app_icon"
+        android:label="zentv spike"
+        tools:replace="android:label">
+        <activity
+            android:name="io.github.brijrokad.zentv.spike.SpikeActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name="io.github.brijrokad.zentv.spike.HomeKeyService"
+            android:exported="false"
+            android:label="zentv spike: Home button"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:process=":homekey">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/home_key_service" />
+        </service>
+    </application>
+</manifest>

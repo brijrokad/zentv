@@ -20,6 +20,12 @@ def main(argv: list[str]) -> int:
     if argv[:2] == ["mdns", "services"]:
         print("List of discovered mdns services")
         return 0
+    if len(argv) == 5 and argv[0] == "-s" and argv[2:4] == ["install", "-r"]:
+        dev = FakeDevice.from_json(state.read_text())
+        res = dev.host(argv[2:])
+        state.write_text(dev.to_json())
+        sys.stdout.write(res.stdout)
+        return res.returncode
     if len(argv) == 4 and argv[0] == "-s" and argv[2] == "shell":
         if argv[1] != serial:
             print(f"adb: device '{argv[1]}' not found", file=sys.stderr)

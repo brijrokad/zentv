@@ -112,7 +112,28 @@ SAMPLE_ARGS = {
     "enable": [("com.example.promo",), ("com.example.promo", True)],
     "unhide": [("com.google.android.katniss", frozenset({"com.google.android.katniss"}))],
 }
-NOT_CONSTRUCTORS = {"check_package", "package_state", "parse_state"}
+SPIKE = "io.github.brijrokad.zentv.spike"
+SPIKE_SVC = f"{SPIKE}/{SPIKE}.HomeKeyService"
+SAMPLE_ARGS.update(
+    {
+        "install_apk": [("/tmp/zentv/app-spike.apk", SPIKE)],
+        "put_accessibility": [
+            ("accessibility_enabled", "1"),
+            ("enabled_accessibility_services", SPIKE_SVC),
+            ("accessibility_enabled", "0", True),
+        ],
+        "delete_accessibility": [
+            ("enabled_accessibility_services",),
+            ("enabled_accessibility_services", True),
+        ],
+        "tcl_appop": [
+            (SPIKE, "APP_AUTO_START", "allow", "TCL"),
+            (SPIKE, "APP_AUTO_START", "default", "tcl", True),
+        ],
+        "appops_write_settings": [(SPIKE, "APP_AUTO_START"), (SPIKE, "APP_AUTO_START", True)],
+    }
+)
+NOT_CONSTRUCTORS = {"check_package", "package_state", "parse_state", "appop_mode"}
 
 
 def _constructors():
@@ -139,12 +160,37 @@ def test_constructor_outputs_pass_refuse_and_changes_have_readers(name):
                 assert r.reader().kind is C.Kind.READ
 
 
-def test_only_adb_close_and_restore_enable_are_gate_exempt():
+def test_only_adb_close_and_restore_paths_are_gate_exempt():
     for name, arglist in SAMPLE_ARGS.items():
         for args in arglist:
             cmd = _constructors()[name](*args)
-            expected = name == "adb_network_off" or (name == "enable" and len(args) == 2 and args[1])
+            expected = name == "adb_network_off" or (len(args) > 0 and args[-1] is True)
             assert cmd.gate_exempt == expected, (name, args)
+
+
+def test_launcher_constructors_refuse_anything_not_zentvs_own():
+    with pytest.raises(InvalidArgument):
+        C.install_apk("/tmp/x/other.apk", "com.example.other")
+    with pytest.raises(InvalidArgument):
+        C.install_apk("relative/app.apk", SPIKE)
+    with pytest.raises(InvalidArgument):
+        C.tcl_appop(SPIKE, "APP_AUTO_START", "allow", "Sony")
+    with pytest.raises(InvalidArgument):
+        C.tcl_appop("com.example.other", "APP_AUTO_START", "allow", "TCL")
+    with pytest.raises(InvalidArgument):
+        C.tcl_appop(SPIKE, "SYSTEM_ALERT_WINDOW", "allow", "TCL")
+    with pytest.raises(InvalidArgument):
+        C.put_accessibility("enabled_notification_listeners", SPIKE_SVC)
+    with pytest.raises(InvalidArgument):
+        C.put_accessibility("enabled_accessibility_services", "evil;id")
+    with pytest.raises(InvalidArgument):
+        C.delete_accessibility("adb_enabled")
+    assert C.install_apk("/tmp/zentv/app-spike.apk", SPIKE).host is True
+
+
+def test_appop_mode_parsing():
+    assert C.appop_mode("No operations.\nDefault mode: ignore\n") == "default"
+    assert C.appop_mode("APP_AUTO_START: allow; time=+3m ago\n") == "allow"
 
 
 def test_unhide_only_for_approved_packages():

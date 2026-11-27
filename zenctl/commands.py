@@ -27,6 +27,14 @@ DUMPSYS_ARG_RE = re.compile(r"^-{0,2}[A-Za-z0-9][A-Za-z0-9_.\-]{0,127}$")
 MAX_COMMAND_LEN = 1000
 
 SETTINGS_NAMESPACES = frozenset({"global", "secure", "system"})
+COMPONENT_RE = re.compile(
+    r"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+/(\.?[A-Za-z][A-Za-z0-9_]*)(\.[A-Za-z0-9_]+)*$"
+)
+APK_PATH_RE = re.compile(r"^/[A-Za-z0-9._/\-]+\.apk$")
+# zentv's own packages. Installs and the TCL app-op are refused for anything else (rule 6, D5).
+OWN_PACKAGES = frozenset({"io.github.brijrokad.zentv", "io.github.brijrokad.zentv.spike"})
+ACCESSIBILITY_KEYS = ("enabled_accessibility_services", "accessibility_enabled")
+TCL_BOOT_OPS = frozenset({"APP_AUTO_START", "AUTO_START"})
 DUMPSYS_SERVICES = frozenset(
     {
         "package",
@@ -68,6 +76,9 @@ class Record:
             return settings_get(ns, k)
         if self.kind == "package":
             return dumpsys("package", check_package(self.key))
+        if self.kind == "appop":
+            pkg, op = self.key.split("/", 1)
+            return appops_get(pkg, op)
         raise InvalidArgument(f"no reader for record kind {self.kind!r}")
 
     def parse(self, output: str) -> str | None:
@@ -77,6 +88,8 @@ class Record:
             return None if v in ("", "null") else v
         if self.kind == "package":
             return package_state(output)
+        if self.kind == "appop":
+            return appop_mode(output)
         raise InvalidArgument(f"no parser for record kind {self.kind!r}")
 
 
@@ -94,6 +107,16 @@ def package_state(dumpsys_output: str) -> str | None:
     return f"enabled={m[3]} hidden={m[2]} installed={m[1]}"
 
 
+APPOP_LINE = re.compile(r"^\s*([A-Z_]+):\s*([a-z]+)", re.MULTILINE)
+APPOP_MODES = frozenset({"allow", "ignore", "deny", "default", "foreground"})
+
+
+def appop_mode(output: str) -> str:
+    """'allow'/'ignore'/... from `appops get <pkg> <op>`; 'default' when nothing is set ("No operations.")."""
+    m = APPOP_LINE.search(output)
+    return m[2] if m and m[2] in APPOP_MODES else "default"
+
+
 def parse_state(value: str | None) -> dict[str, str]:
     return dict(kv.split("=", 1) for kv in (value or "").split())
 
@@ -107,6 +130,8 @@ class Command:
     # Exempt from the read-only gate: adb_network_off (rule 10) and a restore's `pm enable`, which
     # replays a snapshot taken on this same TV and must work even after a firmware update.
     gate_exempt: bool = False
+    # Runs as `adb -s <serial> <argv>` on the Mac instead of `adb shell` (only install_apk).
+    host: bool = False
     _token: object = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -264,4 +289,91 @@ def unhide(package: str, approved: frozenset[str]) -> Command:
         raise InvalidArgument(f"{p} is not in the device's approved restore_hidden list")
     return _cmd(
         ["pm", "unhide", "--user", "0", p], Kind.CHANGE, f"unhide {p}", records=(Record("package", p),)
+    )
+
+
+# ---- launcher (M3a/M4): zentv's own APK, its Home helper, and the TCL boot app-op ----------
+
+
+def install_apk(path: str, package: str) -> Command:
+    """`adb install -r <apk>` (D5): zentv's own APK only, Android's normal install path, never -g/-t."""
+    if package not in OWN_PACKAGES:
+        raise InvalidArgument(f"install is only for zentv's own packages, not {package!r}")
+    if not APK_PATH_RE.fullmatch(path):
+        raise InvalidArgument(f"not an absolute .apk path with safe characters: {path!r}")
+    return _cmd(
+        ["install", "-r", path],
+        Kind.CHANGE,
+        f"install {package}",
+        records=(Record("package", package),),
+        host=True,
+    )
+
+
+def _check_services(value: str) -> str:
+    parts = value.split(":")
+    if not value or not all(COMPONENT_RE.fullmatch(p) for p in parts):
+        raise InvalidArgument(f"not a list of components: {value!r}")
+    return value
+
+
+def put_accessibility(key: str, value: str, for_restore: bool = False) -> Command:
+    """`settings put secure <key> <value>` for the two accessibility keys only (rule 6/9)."""
+    if key == "accessibility_enabled":
+        if value not in ("0", "1"):
+            raise InvalidArgument("accessibility_enabled must be 0 or 1")
+    elif key == "enabled_accessibility_services":
+        _check_services(value)
+    else:
+        raise InvalidArgument(f"not an accessibility key zentv may set: {key!r}")
+    return _cmd(
+        ["settings", "put", "secure", key, value],
+        Kind.CHANGE,
+        f"set {key}",
+        records=(Record("setting", f"secure/{key}"),),
+        gate_exempt=for_restore,
+    )
+
+
+def delete_accessibility(key: str, for_restore: bool = False) -> Command:
+    """`settings delete secure <key>`: only to put back a value that was unset before zentv."""
+    if key not in ACCESSIBILITY_KEYS:
+        raise InvalidArgument(f"not an accessibility key zentv may reset: {key!r}")
+    return _cmd(
+        ["settings", "delete", "secure", key],
+        Kind.CHANGE,
+        f"reset {key}",
+        records=(Record("setting", f"secure/{key}"),),
+        gate_exempt=for_restore,
+    )
+
+
+def tcl_appop(package: str, op: str, mode: str, brand: str, for_restore: bool = False) -> Command:
+    """`appops set <zentv> APP_AUTO_START|AUTO_START <mode>`: TCL only, zentv's own package only
+    (rule 6, approved at Checkpoint 2)."""
+    if brand.lower() != "tcl":
+        raise InvalidArgument("the boot app-op is for TCL TVs only")
+    if package not in OWN_PACKAGES:
+        raise InvalidArgument(f"the boot app-op is only for zentv's own package, not {package!r}")
+    if op not in TCL_BOOT_OPS or mode not in APPOP_MODES:
+        raise InvalidArgument(f"app-op/mode not allowed: {op} {mode}")
+    return _cmd(
+        ["appops", "set", package, op, mode],
+        Kind.CHANGE,
+        f"{op}={mode} for {package}",
+        records=(Record("appop", f"{package}/{op}"),),
+        gate_exempt=for_restore,
+    )
+
+
+def appops_write_settings(package: str, op: str, for_restore: bool = False) -> Command:
+    """`appops write-settings`: TCL keeps an app-op across reboots only after this."""
+    if package not in OWN_PACKAGES or op not in TCL_BOOT_OPS:
+        raise InvalidArgument("write-settings only follows zentv's own TCL boot app-op")
+    return _cmd(
+        ["appops", "write-settings"],
+        Kind.CHANGE,
+        "persist app-ops",
+        records=(Record("appop", f"{package}/{op}"),),
+        gate_exempt=for_restore,
     )

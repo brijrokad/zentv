@@ -43,3 +43,10 @@ coverage.xml
 *.raw.txt
 adbkey
 adbkey.pub
+
+# launcher build outputs and machine-local SDK path
+launcher/.gradle/
+launcher/build/
+launcher/app/build/
+launcher/local.properties
+launcher/.kotlin/

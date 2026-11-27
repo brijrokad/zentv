@@ -31,7 +31,11 @@ class FakeDevice:
     transport: str = "WIFI"
     mem_kb: tuple[int, int] = (2000000, 600000)
     admins: list[str] = field(default_factory=list)
-    shell_can_unhide: bool = True  # False on builds where `pm unhide` needs MANAGE_USERS (TCL AR10)
+    shell_can_unhide: bool = True
+    install_package: str = "io.github.brijrokad.zentv.spike"  # what the next `adb install` adds
+    service_labels: dict[str, str] = field(
+        default_factory=dict
+    )  # False on builds where `pm unhide` needs MANAGE_USERS (TCL AR10)
     log: list[str] = field(default_factory=list)
 
     # ---- transport protocol ----
@@ -43,6 +47,32 @@ class FakeDevice:
         except _Fail as f:
             return ShellResult(f.rc, "", f.msg)
         return ShellResult(0, out, "")
+
+    def host(self, argv: list[str], timeout: float = 30.0) -> ShellResult:
+        self.log.append("adb " + " ".join(argv))
+        if argv[:2] == ["install", "-r"] and len(argv) == 3:
+            self.packages[self.install_package] = {
+                "system": False,
+                "enabled": True,
+                "installer": None,
+                "uid": 10500,
+                "persistent": False,
+            }
+            return ShellResult(0, "Performing Streamed Install\nSuccess\n", "")
+        return ShellResult(1, "", f"fake adb host: unsupported {argv}")
+
+    def _bound(self) -> list[str]:
+        """Services Android would bind: listed, accessibility on, and on TCL the boot app-op allowed."""
+        if self.settings.get("secure", {}).get("accessibility_enabled") != "1":
+            return []
+        out = []
+        for comp in self.settings.get("secure", {}).get("enabled_accessibility_services", "").split(":"):
+            pkg = comp.split("/")[0]
+            if comp and pkg in self.packages:
+                tcl = self.props.get("ro.product.brand", "").lower() == "tcl"
+                if not tcl or self.appops.get(f"{pkg}/APP_AUTO_START") == "allow":
+                    out.append(comp)
+        return out
 
     # ---- serialisation (for the fake adb shim) ----
     def to_json(self) -> str:
@@ -133,6 +163,22 @@ class FakeDevice:
                 p = self._need(pkg)
                 p["hidden"] = False
                 return f"Package {pkg} new hidden state: false\n"
+            case ["settings", "delete", ns, key]:
+                self.settings.get(ns, {}).pop(key, None)
+                return "Deleted 1 rows\n"
+            case ["appops", "set", pkg, op, mode]:
+                if op not in self.known_ops:
+                    raise _Fail(UNSUPPORTED, f"Error: Unknown operation string: {op}")
+                if mode == "default":
+                    self.appops.pop(f"{pkg}/{op}", None)
+                else:
+                    self.appops[f"{pkg}/{op}"] = mode
+                return ""
+            case ["appops", "write-settings"]:
+                return "Current settings written.\n"
+            case ["dumpsys", "accessibility"]:
+                bound = ", ".join(f"Service[label=helper, id={c.split('/')[-1]}]" for c in self._bound())
+                return f"User state[\n     Bound services:{{{bound}}}\n     Enabled services:{{}}\n]\n"
             case ["settings", "put", ns, key, value]:
                 self.settings.setdefault(ns, {})[key] = value
                 return ""

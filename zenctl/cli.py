@@ -12,7 +12,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, adbclose, device, paths, privacy, redact, safety, smoke, survey
+from . import __version__, adbclose, device, launcher, paths, privacy, redact, safety, smoke, survey
 from . import apply as engine
 from . import plan as planner
 from . import snapshot as snapshots
@@ -303,6 +303,63 @@ def cmd_smoke(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_launcher(args: argparse.Namespace) -> int:
+    action = args.launcher_action
+    if action == "status":
+        c = Ctx(args)
+        _print_json(launcher.status(c.session, c.ident))
+        c.write_log("launcher-status")
+        return 0
+    c = Ctx(args, yes=args.yes)
+    try:
+        if action == "install":
+            apk = Path(args.apk) if args.apk else launcher.default_apk()
+            cmd = launcher.install(c.session, apk)
+            pre = c.session.recorded.get(cmd.records[0].key)
+            if not args.yes:
+                print(
+                    f"DRY RUN (nothing sent). With --yes zentv would run:\n  adb {cmd.shell_string()}"
+                    f"    # {cmd.records[0].key} was: {pre or 'not installed'}"
+                )
+                return 0
+            print(
+                f"installed {cmd.records[0].key} (read back). zentv never uninstalls it: remove it yourself "
+                "in Settings > Apps when you're done."
+            )
+            return 0
+        if action == "enable-home-key":
+            cmds, snap = launcher.enable_home_key(c.session, c.ident)
+            if not args.yes:
+                print("DRY RUN (nothing sent). With --yes zentv would write a launcher snapshot, then run:")
+                for cmd in cmds:
+                    was = c.session.recorded.get(cmd.records[0].key)
+                    print(f"  adb shell {cmd.shell_string()}    # was: {was}")
+                return 0
+            print(
+                f"helper enabled (read back). snapshot: {snap.path if snap else '-'}\n"
+                "Undo: zentv launcher revert --yes"
+            )
+            return 0
+        if action == "revert":
+            snap = launcher.latest_launcher_snapshot(c.ident)
+            if snap is None:
+                raise ZenError("no launcher snapshot for this TV")
+            cmds, mismatches = launcher.revert(c.session, c.ident, snap)
+            if not args.yes:
+                print(f"DRY RUN (nothing sent). With --yes zentv would put back {snap.path}:")
+                for cmd in cmds:
+                    print(f"  adb shell {cmd.shell_string()}")
+                return 0
+            if mismatches:
+                print("REVERT INCOMPLETE: " + "; ".join(mismatches))
+                return 7
+            print("reverted: the helper is off and every recorded value reads back as before.")
+            return 0
+    finally:
+        c.write_log(f"launcher-{action}")
+    raise ZenError(f"unknown launcher action {action}")
+
+
 # ---- parser ----------------------------------------------------------------------------------
 
 
@@ -383,6 +440,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("snapshots", help="list this TV's snapshots")
     s.set_defaults(func=cmd_snapshots)
+
+    s = sub.add_parser("launcher", help="zentv's own APK and its Home helper (M3a spike)")
+    lsub = s.add_subparsers(dest="launcher_action", required=True)
+    li = lsub.add_parser("install", help="adb install -r zentv's own APK (dry-run without --yes)")
+    li.add_argument("--apk", help="default: launcher/app/build/outputs/apk/spike/app-spike.apk")
+    li.add_argument("--yes", action="store_true")
+    le = lsub.add_parser("enable-home-key", help="snapshot, then enable the Home helper (+ TCL app-op)")
+    le.add_argument("--yes", action="store_true")
+    lr = lsub.add_parser("revert", help="disable the helper and put back what enable-home-key changed")
+    lr.add_argument("--yes", action="store_true")
+    lsub.add_parser("status", help="read-only: installed, helper enabled/bound, TCL app-op")
+    s.set_defaults(func=cmd_launcher)
 
     s = sub.add_parser(
         "smoke-test", help="interactive checklist from the device profile; any failure means restore"
