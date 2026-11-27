@@ -45,7 +45,8 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
 - **Firmware:** the user updates to the latest TCL firmware before Phase 3. Record the fingerprint and incremental.
 - **Network:** Wi-Fi today. **Built-in Ethernet must stay usable.**
 - **Tuner/antenna:** **in use.** Antenna/Live TV and HDMI inputs must keep working.
-- **Features in active use (all must keep working):** TCL remote including the voice button, Google TV phone remote, Google Home casting (Chromecast built-in), AirPlay/HomeKit.
+- **Features in active use (all must keep working):** TCL remote including the voice button, Google TV phone remote, Google Home casting (Chromecast built-in), the Google Home panel, Live TV/HDMI, and the HDMI-ARC soundbar. AirPlay/HomeKit: **not supported on this TV** (Phase 3); dropped.
+- **Phase 3 result (2026-11-26):** G03_4K_US_NF_DB / BeyondTV4 / rtd288o, firmware **AR10** (latest per owner), 2 GB RAM. An earlier tool had disabled 8 and **hidden** 10 packages, including `mediashell` and `katniss`, so casting and voice don't work until the owner-approved unhide. See `devices/tcl-g03-beyondtv4/PROFILE.md`.
 - **Known platform behaviour (sibling data, `SECURITY_AUDIT.md` §8.6):**
   - TCL's boot manager (`TclAppBoot`) blocks accessibility services without the `APP_AUTO_START` app-op.
   - The remote's app buttons depend on `launcherx`.
@@ -66,6 +67,11 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
      - `zentv launcher revert` restores each recorded mode, runs `appops write-settings`, and reads the modes back. A mismatch fails loudly.
      - It's never re-applied. If TCL resets the op, zentv reports the drift and does nothing else (rules 5 and 8).
      - The placeholder TV-input trick (`SECURITY_AUDIT.md` D-CT-06), and any other way around TCL's boot manager, stays forbidden.
+   - **Pending at Checkpoint 4: undo another tool's `pm hide`.** The TCL arrived with packages hidden by an earlier tool. The owner chose to restore `com.google.android.apps.mediashell` and `com.google.android.katniss`. Proposed exception:
+     - `pm unhide` of **exactly the packages listed under `restore_hidden` in the device's `debloat.yaml`**.
+     - The hidden state is recorded first, shown in the dry-run, sent only with `--yes`, and read back.
+     - Not reversed by `restore`, because re-hiding would need `pm hide`, which stays forbidden.
+     - `pm hide` itself stays forbidden.
 7. **Never disable the stock home or the setup wizard.** `com.google.android.apps.tv.launcherx`, `com.google.android.tvlauncher` and `com.google.android.tungsten.setupwraith` stay enabled: a boot loop has been reported on a Sony Bravia Google TV (audit D-CT-04). zentv becomes the default with `set-home-activity`. It does **not** disable the stock home.
 8. **Never re-enable or re-disable anything behind my back.** zentv touches only what I approved in the current run.
 9. **Home-button policy (decided: Option B).** The launcher may include **one** accessibility service, used only to intercept the Home key:
@@ -196,10 +202,10 @@ Do the supervised run on one TV at a time, TCL first.
 **Smoke test, Sony (any failure means restore):** Sony remote including the voice button, the phone remote connects, casting from a phone, AirPlay from an Apple device, Assistant answers, Wi-Fi reconnects after a reboot, and (if a cable or adapter is available) Ethernet links.
 
 **Smoke test, TCL (any failure means restore):**
-- TCL remote including the voice button.
+- TCL remote including the voice button (voice needs the `katniss` unhide and the remote paired over Bluetooth).
 - The remote's app buttons: Netflix, YouTube, Prime Video, Apple, TCL Channel, gear, Input.
 - A held Volume button ramps.
-- The phone remote connects. Casting from a phone. AirPlay from an Apple device.
+- The phone remote connects. Casting from a phone (after the approved unhide of `mediashell`).
 - Google TV's Google Home panel opens from quick settings and controls a light.
 - Live TV through the antenna, and an HDMI input plays.
 - Standby, then wake from the remote, with no reboot (uptime keeps counting, #3533).
