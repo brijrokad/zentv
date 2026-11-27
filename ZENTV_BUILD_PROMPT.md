@@ -249,9 +249,9 @@ Phase 1 (both runs) judged it not worth the risk: both TVs already have the Goog
 - [x] `docs/audit/SECURITY_AUDIT.md` + `binaries-sha256.txt` (Phase 0 + delta + delta #2)
 - [x] `docs/audit/EVALUATION.md` (re-run 2026-11-26, Sony + TCL)
 - [ ] Architecture + M1–M6 plan
-- [ ] CLI with tests, dry-run default, snapshots, verified restore, refuse list, adb-close
+- [x] CLI with tests, dry-run default, snapshots, verified restore, refuse list, adb-close (M1 + M2)
 - [ ] `devices/sony-bravia-4k-vh21/` profile, survey and reviewed debloat list
-- [ ] `devices/tcl-g03-beyondtv4/` (renamed if needed) profile, survey and reviewed debloat list
+- [x] `devices/tcl-g03-beyondtv4/` profile, survey and reviewed debloat list. Supervised run 2026-11-27: 3 disables applied, smoke test passed, ADB closed. Casting and voice can't be un-hidden over ADB on AR10.
 - [ ] Home-key spike result on **both TVs**, then launcher APK with CrashGuard and instant revert
 - [ ] README (description: *"Make your Android TV calm again: debloat, block ads and telemetry, and swap in a fast, clutter-free launcher over Wi-Fi ADB. No root, fully reversible."*), MIT LICENSE, THIRD_PARTY_NOTICES.md
 - [ ] Three-way benchmark table for each TV
