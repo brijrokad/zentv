@@ -57,7 +57,11 @@ def test_survey_is_redacted_and_read_only(tcl):
     assert data["identity"]["ro.build.version.sdk"] == "30"
     assert data["memory_kb"]["MemTotal"] == 1900000
     assert "com.tcl.tvinput/.TunerService/HW0" in data["tv_inputs"]
-    assert data["network"]["transports_seen"] == ["WIFI"]
+    assert data["network"]["active_transport"] == "WIFI"
+    assert data["absent_for_user"] == {
+        "com.tcl.messagebox": {"installed": True, "hidden": True, "enabled_state": 0}
+    }
+    assert "com.tcl.messagebox" not in data["packages"]
     assert "creatorName=android.uid.system:1000" in data["network"]["wifi_network_owners"]
 
 

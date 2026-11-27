@@ -70,11 +70,21 @@ class FakeDevice:
                 if p is None:
                     return f"Unable to find package: {pkg}\n"
                 flags = "SYSTEM PERSISTENT" if p.get("persistent") else ("SYSTEM" if p.get("system") else "")
-                return f"Packages:\n  Package [{pkg}] (1a2b):\n    pkgFlags=[ {flags} ]\n"
-            case ["dumpsys", "connectivity"]:
+                hidden = str(bool(p.get("hidden"))).lower()
+                enabled = 0 if p.get("enabled", True) else 3
                 return (
-                    f"Active default network: 100\nNetworkAgentInfo{{network{{100}} "
-                    f"nc{{[ Transports: {self.transport} ] TRANSPORT_{self.transport}}}}}\n"
+                    f"Packages:\n  Package [{pkg}] (1a2b):\n    pkgFlags=[ {flags} ]\n"
+                    f"    User 0: ceDataInode=1 installed=true hidden={hidden} "
+                    f"suspended=false enabled={enabled}\n"
+                )
+            case ["dumpsys", "connectivity"]:
+                # Format as printed by a TCL AR10 build (Android 11), 2026-11-26.
+                return (
+                    "Active default network: 116\n"
+                    f"  NetworkAgentInfo{{ ni{{[type: {self.transport}[], state: CONNECTED/CONNECTED]}}  "
+                    f"network{{116}}  nethandle{{501621903373}}\n"
+                    "  NetworkAgentInfo{ ni{[type: ETHERNET[], state: DISCONNECTED]}  network{90}\n"
+                    "      NetworkRequest [ BACKGROUND_REQUEST id=2, [ Transports: CELLULAR ] ]\n"
                 )
             case ["dumpsys", "wifi"]:
                 return (
@@ -110,7 +120,10 @@ class FakeDevice:
             case ["appops", "get", pkg, op]:
                 if op not in self.known_ops:
                     raise _Fail(UNSUPPORTED, f"Error: Unknown operation string: {op}")
-                return f"{op}: {self.appops.get(f'{pkg}/{op}', 'default')}\n"
+                mode = self.appops.get(f"{pkg}/{op}")
+                if mode is None:  # real output for an op the build knows but nobody set (TCL AR10)
+                    return "No operations.\nDefault mode: ignore\n"
+                return f"{op}: {mode}\n"
             case ["appops", "get", pkg]:
                 return "".join(
                     f"{k.split('/')[1]}: {v}\n" for k, v in self.appops.items() if k.startswith(pkg + "/")
@@ -130,6 +143,8 @@ class FakeDevice:
     def _pm_list(self, flags: list[str]) -> str:
         out = []
         for name, p in sorted(self.packages.items()):
+            if p.get("hidden") and "-u" not in flags:
+                continue  # hidden packages only show with -u, as on a real TV
             if "-d" in flags and p.get("enabled", True):
                 continue
             if "-e" in flags and not p.get("enabled", True):
@@ -203,6 +218,7 @@ def tcl_g03() -> FakeDevice:
             "com.tcl.bootadservice": _pkg(uid=10203),
             "com.tcl.esticker": _pkg(uid=10204, enabled=False),
             "com.tcl.vendorhome": _pkg(uid=10205),  # synthetic: a vendor package that also answers HOME
+            "com.tcl.messagebox": {**_pkg(uid=10206), "hidden": True},  # arrived hidden by another tool
         }
     )
     return FakeDevice(
