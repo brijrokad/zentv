@@ -737,3 +737,20 @@ b9f31213099699ec54b2ae94503a51d9fc1912f3460d28588025fe085138ba99  couch-tv/tvos/
 73e2f8233ad998286de7fa3f23d041d2922b17f67fa951e9e3da6e6e4ebe094d  couch-tv/tvos/CouchTV/Fonts/CouchInter-Medium.ttf
 e9c3010773eb799b946962ba7895ea0592099c9c78fad5ce04fa2c3bb4f97483  couch-tv/tvos/CouchTV/Fonts/CouchInter-Regular.ttf
 a2353d716613a3ad4d3a2f06757ac87f1105c8009f4942bbde653644c517a974  couch-tv/tvos/CouchTV/Fonts/CouchInter-SemiBold.ttf
+
+# zentv launcher assets (copied into launcher/app/src/main/assets/, 2026-11-27). Scenes: byte-for-byte from couch-tv bc5df03a (hashes match the rows above). Font: google/fonts 95f4904f, git blob e30920a1 matches.
+3e2a8a6371199ef749c9842c91378d7c54dc47a67e2590334a5d7ff1a0288ae6  zentv/launcher/app/src/main/assets/scenes/scene-dawn-fg.webp
+862e9df16e41ac95e6a9f8bda40dd0de3a514c5ceb9a21e1a9fb248d39dc1471  zentv/launcher/app/src/main/assets/scenes/scene-dawn-glass.jpg
+2ae089d4d1af213c1ce3434c06fd3e75947f9656eb43138347b5549216ca5dc3  zentv/launcher/app/src/main/assets/scenes/scene-dawn.jpg
+46f82bbf405f14afab0ded816703b5bb3d72d57ca8724b7ce826ad2ee2a07b36  zentv/launcher/app/src/main/assets/scenes/scene-fog-fg.webp
+59b29acfb7cc8459cf25079c3505c23cab0ac0b65b7a74d07d09618293e81212  zentv/launcher/app/src/main/assets/scenes/scene-fog-glass.jpg
+ed7950658a0eb1fc07618ecbb5d66bf3918e128b2b61fe23c2724918d00951fc  zentv/launcher/app/src/main/assets/scenes/scene-fog.jpg
+434b0b260d78769e51f5254dbbdb488e4eb03d27ea65c074cbf13acb1f672b02  zentv/launcher/app/src/main/assets/scenes/scene-golden-fg.webp
+86de4a3c74532d34b61e7e487604d4b67d90650fe063954c74bd627c20b92cb5  zentv/launcher/app/src/main/assets/scenes/scene-golden-glass.jpg
+c134080d8fb9ab0a3b20a3a6aefcd73f6e6fb7a94108c409bf079a2991c50035  zentv/launcher/app/src/main/assets/scenes/scene-golden.jpg
+034b3525f3f405c1458304932aec05ffc9791782fdbc76b5592b60173556ae8e  zentv/launcher/app/src/main/assets/scenes/scene-night-fg.webp
+4a852ba319a280e69f7cc69357c6dfc2ee33084bf86d8bbec5b080a390893ce0  zentv/launcher/app/src/main/assets/scenes/scene-night-glass.jpg
+0a896b2ba859f7310b0f7cf6d1304d444f27223b7255f09d7949313e11e866a5  zentv/launcher/app/src/main/assets/scenes/scene-night.jpg
+57237dc604bd43dcab060b9a68ab8e8101401d34a194ecdc17579b2980c99918  zentv/launcher/app/src/main/assets/scenes/scene-water-glass.jpg
+087b639e30b3aa1ced9a6d357c1ae56bd8ad1042559e0234657eccb00a95472a  zentv/launcher/app/src/main/assets/scenes/scene-water.jpg
+9e95a2258ecdf3e45c72c5bbea1c4cd350e8f7bebc87c9dba53b29b1890b8903  zentv/launcher/app/src/main/assets/fonts/antonio.ttf
