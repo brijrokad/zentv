@@ -6,11 +6,11 @@ trademarked artwork: they go into **your** APK only, built on your Mac, and neve
 
 | File | Shown for an HDMI-CEC device whose name contains |
 |---|---|
-| `playstation.png` | `PlayStation`, `PS5`, `PS4` |
-| `xbox.png` | `Xbox` |
-| `nintendo.png` | `Nintendo`, `Switch` |
+| `playstation.png` / `.webp` / `.jpg` | `PlayStation`, `PS5`, `PS4` |
+| `xbox.png` / `.webp` / `.jpg` | `Xbox` |
+| `nintendo.png` / `.webp` / `.jpg` | `Nintendo`, `Switch` |
 
-- Use a PNG with a transparent background, about 256×256.
+- PNG, WebP or JPG; the build converts it. Use a **real** transparent background (not a checkerboard drawn into the picture), about 256–512 px square.
 - The tile's label is always the port, `HDMI 1`, `HDMI 2`, …, never the console's name.
 - No file, or a console not in the table: zentv draws its own fallback logo, a controller glyph with the
   console's short name (`PS5`, `XBOX`, `SWITCH`) underneath, all as one icon.
