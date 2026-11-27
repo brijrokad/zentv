@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark, no action bar: the scene itself is drawn by SceneView. -->
+    <style name="Theme.Zentv" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/night_ink</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:colorAccent">#FFFFFFFF</item>
+    </style>
+    <style name="Theme.Zentv.Dialog" parent="@android:style/Theme.DeviceDefault.Dialog.Alert" />
+</resources>
