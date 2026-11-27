@@ -754,3 +754,14 @@ c134080d8fb9ab0a3b20a3a6aefcd73f6e6fb7a94108c409bf079a2991c50035  zentv/launcher
 57237dc604bd43dcab060b9a68ab8e8101401d34a194ecdc17579b2980c99918  zentv/launcher/app/src/main/assets/scenes/scene-water-glass.jpg
 087b639e30b3aa1ced9a6d357c1ae56bd8ad1042559e0234657eccb00a95472a  zentv/launcher/app/src/main/assets/scenes/scene-water.jpg
 9e95a2258ecdf3e45c72c5bbea1c4cd350e8f7bebc87c9dba53b29b1890b8903  zentv/launcher/app/src/main/assets/fonts/antonio.ttf
+
+# zentv launcher scenes switched to 4K (2026-11-27, owner's choice): the 1080p backgrounds and cut-outs above were removed; these @2x copies replace them, byte-for-byte from couch-tv bc5df03a (hashes match the couch-tv rows).
+106dbda6da3265336385c49151100ab67cf4eb692c142a2b17e9e0dc38c6aaf7  zentv/launcher/app/src/main/assets/scenes/scene-dawn-fg@2x.webp
+aa35b47609f2fc11727db2097d55a565fdaef6093b794840eb52ee6ddf94dda5  zentv/launcher/app/src/main/assets/scenes/scene-dawn@2x.jpg
+d2897640ce64c47ba44facfdd6e4f889ff2154599169086611bffc61565efefe  zentv/launcher/app/src/main/assets/scenes/scene-fog-fg@2x.webp
+250926204bf3d6789b002cfb8bb514109db95019ca9e76291d2e13054dc5f8ec  zentv/launcher/app/src/main/assets/scenes/scene-fog@2x.jpg
+13f77ea7e2f348979df80d86c54e0b3404ff5bfa33bc035f58da1cb521448b34  zentv/launcher/app/src/main/assets/scenes/scene-golden-fg@2x.webp
+210b44a3de9173d48939b53e3e7b745562fd52f257c2913547bdfaa93f8d1e24  zentv/launcher/app/src/main/assets/scenes/scene-golden@2x.jpg
+4c510c190465177e05c3895c77ce9f2049f524802b131fa9241a8df7d1841084  zentv/launcher/app/src/main/assets/scenes/scene-night-fg@2x.webp
+5916d70c2078d9e28fcfe3778bdb95cf492a2fd9dd174eb774800a5a1c49abf7  zentv/launcher/app/src/main/assets/scenes/scene-night@2x.jpg
+621fca94d91547fe675925cba1a23409daca0f0e9b34661ca68338b045952611  zentv/launcher/app/src/main/assets/scenes/scene-water@2x.jpg

@@ -23,12 +23,25 @@ enum class Scene(
     FOG("fog", "Fog", true, 172f, 470f, 96f, GlassFill(brightness = 0.46f, saturation = 0.8f, contrast = 1.1f, alpha = 0.85f)),
     DAWN("dawn", "Dawn", true, 150f, 400f, null, GlassFill());
 
-    val background get() = "scenes/scene-$id.jpg"
-    val cutout get() = if (hasCutout) "scenes/scene-$id-fg.webp" else null
+    /** 3840x2160 (couch-tv's @2x copies). Decoded at the screen's real size; see [sampleSizeFor]. */
+    val background get() = "scenes/scene-$id@2x.jpg"
+    val cutout get() = if (hasCutout) "scenes/scene-$id-fg@2x.webp" else null
+
+    /** 1920x1080: couch-tv has no 4K glass layer, and a blur loses nothing when scaled up. */
     val glass get() = "scenes/scene-$id-glass.jpg"
 
     companion object {
         fun byId(id: String?): Scene? = entries.firstOrNull { it.id == id }
+
+        /**
+         * Power-of-two downscale for a 3840px-wide scene on a screen [screenWidthPx] wide: 1 on a TV whose
+         * UI is drawn at 4K, 2 at 1080p (so a 1080p UI holds 1080p-sized bitmaps, not 4K ones).
+         */
+        fun sampleSizeFor(screenWidthPx: Int, imageWidthPx: Int = 3840): Int {
+            var s = 1
+            while (screenWidthPx > 0 && imageWidthPx / (s * 2) >= screenWidthPx) s *= 2
+            return s
+        }
 
         /**
          * "Auto": the scene follows the time of day. Dawn 05-08, water 08-16, golden hour 16-19,

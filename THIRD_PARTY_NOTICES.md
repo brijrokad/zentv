@@ -20,7 +20,7 @@ Device facts in `devices/*/PROFILE.md` cite cleanyourtv and couch-tv device note
 
 | Files | Source | Terms |
 |---|---|---|
-| Home scenes `scene-night`, `scene-golden`, `scene-water`, `scene-fog`, `scene-dawn` (+ `-fg` cut-outs, `-glass` fills, `@2x` 4K copies) | couch-tv (© 2026 Seagey), `tv-home/web/backgrounds/` at `bc5df03a`. Made for couch-tv with an AI image model from text only; the 4K copies are upscaled with Real-ESRGAN. | couch-tv's `CREDITS.md`: "Use them however you like." Thanks to couch-tv. zentv ships the 1080p files only (`launcher/app/src/main/assets/scenes/`, 14 files, byte-for-byte; hashes in `docs/audit/binaries-sha256.txt`). |
+| Home scenes `scene-night`, `scene-golden`, `scene-water`, `scene-fog`, `scene-dawn` (+ `-fg` cut-outs, `-glass` fills, `@2x` 4K copies) | couch-tv (© 2026 Seagey), `tv-home/web/backgrounds/` at `bc5df03a`. Made for couch-tv with an AI image model from text only; the 4K copies are upscaled with Real-ESRGAN. | couch-tv's `CREDITS.md`: "Use them however you like." Thanks to couch-tv. zentv ships the 4K backgrounds and cut-outs (`@2x`) plus the 1080p `-glass` layers (`launcher/app/src/main/assets/scenes/`, 14 files, byte-for-byte; hashes in `docs/audit/binaries-sha256.txt`). |
 
 ## Fonts
 

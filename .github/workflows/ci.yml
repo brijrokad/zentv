@@ -44,7 +44,7 @@ jobs:
           ./gradlew --no-daemon -Pzentv.localIcons=false
           assembleCoreRelease assembleWeatherRelease
           testCoreDebugUnitTest testWeatherDebugUnitTest lintCoreRelease lintWeatherRelease
-      - name: "APK rules: core has no permissions, weather only INTERNET, no native code, no logos, core < 3 MB"
+      - name: "APK rules: core has no permissions, weather only INTERNET, no native code, no logos, core < 10 MB"
         run: |
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
           CORE=launcher/app/build/outputs/apk/core/release/app-core-release-unsigned.apk
@@ -60,7 +60,7 @@ jobs:
             test "$(unzip -l "$apk" | grep -c 'assets/consoles/' || true)" = 0
           done
           size=$(stat -c %s "$CORE"); echo "core size: $size bytes"
-          test "$size" -lt 3145728
+          test "$size" -lt 10485760
 
   secrets:
     runs-on: ubuntu-24.04

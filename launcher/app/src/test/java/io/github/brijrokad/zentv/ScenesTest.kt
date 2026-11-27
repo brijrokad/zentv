@@ -20,10 +20,18 @@ class ScenesTest {
     }
 
     @Test fun assetPaths() {
-        assertEquals("scenes/scene-night.jpg", Scene.NIGHT.background)
-        assertEquals("scenes/scene-night-fg.webp", Scene.NIGHT.cutout)
+        assertEquals("scenes/scene-night@2x.jpg", Scene.NIGHT.background)
+        assertEquals("scenes/scene-night-fg@2x.webp", Scene.NIGHT.cutout)
         assertNull(Scene.WATER.cutout)
         assertEquals("scenes/scene-water-glass.jpg", Scene.WATER.glass)
+    }
+
+    @Test fun fourKScenesDecodeAtScreenSize() {
+        assertEquals(1, Scene.sampleSizeFor(3840))
+        assertEquals(2, Scene.sampleSizeFor(1920))
+        assertEquals(1, Scene.sampleSizeFor(2560)) // never below the screen size
+        assertEquals(4, Scene.sampleSizeFor(960))
+        assertEquals(1, Scene.sampleSizeFor(0))
     }
 
     @Test fun clockFormats() {

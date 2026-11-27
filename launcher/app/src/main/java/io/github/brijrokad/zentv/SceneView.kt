@@ -92,9 +92,10 @@ class SceneView(context: Context, private val d: Design) : View(context) {
         loading = s
         val app = context.applicationContext as ZentvApp
         app.worker.execute {
-            val b = decode(s.background, Bitmap.Config.RGB_565)
-            val g = decode(s.glass, Bitmap.Config.RGB_565)
-            val f = s.cutout?.let { decode(it, Bitmap.Config.ARGB_8888) }
+            val sample = Scene.sampleSizeFor(screenWidth())
+            val b = decode(s.background, Bitmap.Config.RGB_565, sample)
+            val g = decode(s.glass, Bitmap.Config.RGB_565, 1)
+            val f = s.cutout?.let { decode(it, Bitmap.Config.ARGB_8888, sample) }
             post {
                 if (loading != s) return@post
                 bg?.recycle(); fg?.recycle(); glass?.recycle()
@@ -105,9 +106,14 @@ class SceneView(context: Context, private val d: Design) : View(context) {
         }
     }
 
-    private fun decode(path: String, config: Bitmap.Config): Bitmap? = runCatching {
+    private fun screenWidth(): Int = resources.displayMetrics.let { maxOf(it.widthPixels, it.heightPixels) }
+
+    private fun decode(path: String, config: Bitmap.Config, sample: Int): Bitmap? = runCatching {
         context.assets.open(path).use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inPreferredConfig = config })
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
+                inPreferredConfig = config
+                inSampleSize = sample
+            })
         }
     }.getOrNull()
 
