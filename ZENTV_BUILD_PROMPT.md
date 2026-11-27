@@ -256,7 +256,7 @@ Phase 1 (both runs) judged it not worth the risk: both TVs already have the Goog
 - [ ] Architecture + M1–M6 plan
 - [x] CLI with tests, dry-run default, snapshots, verified restore, refuse list, adb-close (M1 + M2)
 - [ ] `devices/sony-bravia-4k-vh21/` profile, survey and reviewed debloat list
-- [x] `devices/tcl-g03-beyondtv4/` profile, survey and reviewed debloat list. Supervised run 2026-11-27: 3 disables applied, ADB closed. Smoke item 8 (Wi-Fi rejoins after reboot) **failed** (corrected); decision pending. Casting and voice can't be un-hidden over ADB on AR10.
+- [x] `devices/tcl-g03-beyondtv4/` profile, survey and reviewed debloat list. Supervised run 2026-11-27: 3 disables applied. A Wi-Fi rejoin failure turned out to be pre-existing (it persisted after a restore), and was fixed by forgetting 3 stale entries. After re-applying, the smoke test passed with Wi-Fi rejoining on its own, and ADB was closed. Casting and voice can't be un-hidden over ADB on AR10.
 - [ ] Home-key spike result on **both TVs** (TCL: **GO**, consume + re-check, `docs/spikes/M3a-tcl-home-key.md`), then launcher APK with CrashGuard and instant revert
 - [ ] README (description: *"Make your Android TV calm again: debloat, block ads and telemetry, and swap in a fast, clutter-free launcher over Wi-Fi ADB. No root, fully reversible."*), MIT LICENSE, THIRD_PARTY_NOTICES.md
 - [ ] Three-way benchmark table for each TV
