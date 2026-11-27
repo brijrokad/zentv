@@ -1,8 +1,10 @@
 # Machine-readable profile (docs/ARCHITECTURE.md §4). PROFILE.md is the human record.
-# Phase 3 fills match + fingerprint from the live TV and sets status: confirmed.
-# Until then zentv is read-only on this TV (only survey, privacy, identify, safety, adb-close).
+# Phase 3 (2026-11-26) read match + fingerprint from the live TV. status stays `unverified` until the
+# owner approves this profile at Checkpoint 4; only then may zentv change anything on this TV.
 status: unverified
 brand: tcl
-soc: realtek          # expected; Phase 3 confirms from ro.board.platform
-match: {}        # e.g. {ro.product.device: ..., ro.product.name: ...}
-fingerprint: null
+soc: realtek
+match:
+  ro.product.device: BeyondTV4
+  ro.product.name: G03_4K_US_NF_DB
+fingerprint: TCL/G03_4K_US_NF_DB/BeyondTV4:11/RP1A.200622.001/AR10:user/release-keys

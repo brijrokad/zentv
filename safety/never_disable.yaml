@@ -185,15 +185,23 @@ groups:
 
   - id: tcl-g03-beyondtv4-features
     scope: {device: tcl-g03-beyondtv4}
-    source: "devices/tcl-g03-beyondtv4/PROFILE.md (Features in active use)"
-    reason: "TCL remote and voice button, phone remote, casting and AirPlay/HomeKit are in daily use."
+    source: "devices/tcl-g03-beyondtv4/PROFILE.md (Features in active use; Phase 3 survey + key log, 2026-11-26)"
+    reason: "TCL remote and voice button, phone remote, casting, Google Home panel, Live TV/HDMI and the ARC soundbar are in daily use."
     packages:
-      - com.google.android.tv.remote.service      # Google TV phone remote (7 TCL lists disable it, CY-02)
-      - com.google.android.katniss                # Google voice / Assistant
-      - com.google.android.apps.mediashell        # Chromecast built-in
+      - com.google.android.tv.remote.service      # Google TV phone remote; advertised as "Living Room TV" (CY-02)
+      - com.google.android.katniss                # Google voice search (currently HIDDEN by an earlier tool; restore decided)
+      - com.google.android.tv.assistant           # Google Assistant for TV (voice)
+      - com.google.android.apps.mediashell        # Chromecast built-in (currently HIDDEN by an earlier tool; restore decided)
       - com.google.android.apps.tv.dreamx         # hosts Google TV's Google Home panel (lights), in use
-    # Phase 3 adds every package the survey maps to remote, voice, casting, AirPlay/HomeKit or
-    # Bluetooth. Not yet known for TCL: the AirPlay/HomeKit package names, com.android.bluetooth.
+      - com.tcl.keyhelp                           # remote virtual keys
+      - com.android.bluetooth                     # Bluetooth remote pairing (voice needs a BT-paired remote)
+      - com.android.inputdevices                  # remote/keyboard layouts
+      - com.tvos                                  # TCL framework resources
+    # Remote buttons seen in the key log: Home/Netflix/YouTube/Prime/Apple TV/TCL Channel are handled by
+    # TclPhoneWindowManager (system_server); gear opens launcherx's dashboard; Input opens com.tcl.suspension
+    # (refused by the tcl group). Apple TV and TCL Channel route through com.tcl.partnercustomizer.
+    # Volume goes over HDMI-CEC/ARC to a soundbar: CEC lives in the framework and com.tcl.tv (both refused).
+    # AirPlay/HomeKit: not supported on this TV (no package, no _airplay advert); dropped by the owner.
 
 never_start:
   - package: mediatek.factorymenu.ui
