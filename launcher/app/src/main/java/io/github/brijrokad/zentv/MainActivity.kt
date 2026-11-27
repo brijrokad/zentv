@@ -147,7 +147,7 @@ class MainActivity : Activity() {
         val cal = Calendar.getInstance()
         val hour = cal.get(Calendar.HOUR_OF_DAY)
         scene.setTime(hour, cal.get(Calendar.MINUTE))
-        scene.showScene(Wallpapers.now(this, prefs, cal))
+        scene.showScene(prefs.sceneNow(hour))
         val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM")
         scene.dateLine = DateFormat.format(pattern, cal).toString()
     }
