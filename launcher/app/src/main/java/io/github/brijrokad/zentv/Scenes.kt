@@ -44,13 +44,14 @@ enum class Scene(
         }
 
         /**
-         * "Auto": the scene follows the time of day. Dawn 05-08, water 08-16, golden hour 16-19,
-         * night otherwise. Fog is never picked automatically; choose it in zentv settings.
+         * "Auto": the scene follows the time of day. Dawn 05-08, fog 08-16, golden hour 16-19,
+         * night otherwise (the owner's choice, 2026-11-27). Water is never picked automatically;
+         * choose it in zentv settings.
          * (The idea of a time-of-day schedule comes from couch-tv; this is zentv's own mapping.)
          */
         fun forHour(hour: Int): Scene = when (hour) {
             in 5..7 -> DAWN
-            in 8..15 -> WATER
+            in 8..15 -> FOG
             in 16..18 -> GOLDEN
             else -> NIGHT
         }

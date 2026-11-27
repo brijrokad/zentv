@@ -10,13 +10,13 @@ class ScenesTest {
         assertEquals(Scene.NIGHT, Scene.forHour(4))
         assertEquals(Scene.DAWN, Scene.forHour(5))
         assertEquals(Scene.DAWN, Scene.forHour(7))
-        assertEquals(Scene.WATER, Scene.forHour(8))
-        assertEquals(Scene.WATER, Scene.forHour(15))
+        assertEquals(Scene.FOG, Scene.forHour(8))
+        assertEquals(Scene.FOG, Scene.forHour(15))
         assertEquals(Scene.GOLDEN, Scene.forHour(16))
         assertEquals(Scene.GOLDEN, Scene.forHour(18))
         assertEquals(Scene.NIGHT, Scene.forHour(19))
         assertEquals(Scene.NIGHT, Scene.forHour(0))
-        for (h in 0..23) assert(Scene.forHour(h) != Scene.FOG) // fog is chosen by hand only
+        for (h in 0..23) assert(Scene.forHour(h) != Scene.WATER) // water is chosen by hand only
     }
 
     @Test fun assetPaths() {
