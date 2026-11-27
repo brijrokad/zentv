@@ -67,6 +67,7 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
      - `zentv launcher revert` restores each recorded mode, runs `appops write-settings`, and reads the modes back. A mismatch fails loudly.
      - It's never re-applied. If TCL resets the op, zentv reports the drift and does nothing else (rules 5 and 8).
      - The placeholder TV-input trick (`SECURITY_AUDIT.md` D-CT-06), and any other way around TCL's boot manager, stays forbidden.
+   - **zentv's own APK (Checkpoint 3, D5):** `adb install -r` of an APK whose package is one of zentv's own (checked locally with aapt2 first), through Android's normal install path. Never `-g`, `-t` or any bypass flag. zentv never uninstalls: the owner removes zentv in Settings → Apps.
    - **Approved at Checkpoint 4 (2026-11-26): undo a `pm hide` found on the TV. Not usable on the TCL (AR10):** the shell lacks `MANAGE_USERS` for `pm unhide`, and the apps were hidden by Google TV's setup, not by a tool. The exception stays defined for builds whose shell may un-hide. The TCL arrived with packages hidden by an earlier tool. The owner chose to restore `com.google.android.apps.mediashell` and `com.google.android.katniss`. Proposed exception:
      - `pm unhide` of **exactly the packages listed under `restore_hidden` in the device's `debloat.yaml`**.
      - The hidden state is recorded first, shown in the dry-run, sent only with `--yes`, and read back.
@@ -251,7 +252,7 @@ Phase 1 (both runs) judged it not worth the risk: both TVs already have the Goog
 - [ ] Architecture + M1–M6 plan
 - [x] CLI with tests, dry-run default, snapshots, verified restore, refuse list, adb-close (M1 + M2)
 - [ ] `devices/sony-bravia-4k-vh21/` profile, survey and reviewed debloat list
-- [x] `devices/tcl-g03-beyondtv4/` profile, survey and reviewed debloat list. Supervised run 2026-11-27: 3 disables applied, smoke test passed, ADB closed. Casting and voice can't be un-hidden over ADB on AR10.
-- [ ] Home-key spike result on **both TVs**, then launcher APK with CrashGuard and instant revert
+- [x] `devices/tcl-g03-beyondtv4/` profile, survey and reviewed debloat list. Supervised run 2026-11-27: 3 disables applied, ADB closed. Smoke item 8 (Wi-Fi rejoins after reboot) **failed** (corrected); decision pending. Casting and voice can't be un-hidden over ADB on AR10.
+- [ ] Home-key spike result on **both TVs** (TCL: **GO**, consume + re-check, `docs/spikes/M3a-tcl-home-key.md`), then launcher APK with CrashGuard and instant revert
 - [ ] README (description: *"Make your Android TV calm again: debloat, block ads and telemetry, and swap in a fast, clutter-free launcher over Wi-Fi ADB. No root, fully reversible."*), MIT LICENSE, THIRD_PARTY_NOTICES.md
 - [ ] Three-way benchmark table for each TV
