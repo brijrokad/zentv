@@ -12,7 +12,10 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, adbclose, device, paths, privacy, redact, safety, survey
+from . import __version__, adbclose, device, paths, privacy, redact, safety, smoke, survey
+from . import apply as engine
+from . import plan as planner
+from . import snapshot as snapshots
 from .adb import AdbTransport, Session, connected_devices, find_adb, run_host
 from .errors import AdbError, ZenError
 
@@ -184,6 +187,122 @@ def cmd_adb_close(args: argparse.Namespace) -> int:
     return 1
 
 
+def _need_profile(c: Ctx) -> device.Profile:
+    if c.profile is None:
+        raise ZenError("no device profile matches this TV; run Phase 3 first")
+    return c.profile
+
+
+def _plan(c: Ctx, include: list[str] | None) -> planner.Plan:
+    prof = _need_profile(c)
+    policy = safety.load(paths.safety_file())
+    debloat = planner.load_debloat(Path(prof.path).parent / "debloat.yaml", prof)
+    return planner.build(c.session, c.ident, prof, policy, debloat, set(include or []))
+
+
+def _print_plan(p: planner.Plan) -> None:
+    print(f"plan {p.digest} for {p.device}")
+    for a in p.actions:
+        print(f"  {a.op:8} {a.package:44} {a.reason[:70]}")
+    if not p.actions:
+        print("  (nothing to change)")
+    for pkg, why in p.skipped:
+        print(f"  skip     {pkg:44} {why}")
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    c = Ctx(args)
+    _print_plan(_plan(c, args.include))
+    print(f"state changes on this TV: {'allowed' if c.allowed else 'read-only'} ({c.gate_reason})")
+    c.write_log("plan")
+    return 0
+
+
+def cmd_apply(args: argparse.Namespace) -> int:
+    c = Ctx(args, yes=args.yes)
+    p = _plan(c, args.include)
+    _print_plan(p)
+    try:
+        res = engine.apply(c.session, c.ident, p, settle_s=args.settle)
+    finally:
+        c.write_log("apply")
+    if not args.yes:
+        print("DRY RUN (nothing sent). With --yes zentv would first write a snapshot, then run:")
+        for cmd in c.session.planned:
+            pre = c.session.recorded.get(cmd.records[0].key)
+            print(f"  adb shell {cmd.shell_string()}    # was: {pre}")
+        return 0
+    if res.snapshot:
+        print(f"snapshot: {res.snapshot.path}")
+        print(f"applied {len(res.sent)} change(s), each read back.")
+        print("Next: reboot, run `zentv smoke-test <device>`, then `zentv adb-close --yes`.")
+        print(f"To undo: zentv restore {res.snapshot.path} --yes")
+    return 0
+
+
+def _snapshot_arg(c: Ctx, path: str | None) -> snapshots.Snapshot:
+    p = Path(path) if path else snapshots.latest(snapshots.device_key(c.ident))
+    if not p:
+        raise ZenError("no snapshot for this TV")
+    return snapshots.load(p)
+
+
+def cmd_restore(args: argparse.Namespace) -> int:
+    c = Ctx(args, yes=args.yes)
+    snap = _snapshot_arg(c, args.snapshot)
+    try:
+        cmds, mismatches, notes = engine.restore(c.session, c.ident, snap)
+    finally:
+        c.write_log("restore")
+    for n in notes:
+        print(f"note: {n}")
+    if not args.yes:
+        print(f"DRY RUN (nothing sent). With --yes zentv would replay {snap.path}:")
+        for s in cmds:
+            print(f"  adb shell {s}")
+        return 0
+    if mismatches:
+        print("RESTORE INCOMPLETE. Read-back mismatches:")
+        for m in mismatches:
+            print(f"  {m.package}: expected {m.expected}, found {m.found}")
+        return 7
+    print(f"restored {len(cmds)} package(s); every recorded package reads back as before.")
+    return 0
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    c = Ctx(args)
+    snap = _snapshot_arg(c, args.snapshot)
+    drift = engine.check(c.session, snap)
+    c.write_log("check")
+    for d in drift:
+        print(f"DRIFT  {d}")
+    print("no drift" if not drift else "drift is reported only; zentv never re-applies (rule 8)")
+    return 1 if drift else 0
+
+
+def cmd_snapshots(args: argparse.Namespace) -> int:
+    c = Ctx(args)
+    for p in snapshots.all_for(snapshots.device_key(c.ident)):
+        s = snapshots.load(p)
+        print(f"{p}  {s.created_utc}  {len(s.actions)} action(s)")
+    return 0
+
+
+def cmd_smoke(args: argparse.Namespace) -> int:
+    profiles = device.load_profiles(paths.devices_dir())
+    prof = next((p for p in profiles if p.name == args.device), None)
+    if prof is None:
+        raise ZenError(f"unknown device profile {args.device!r}")
+    failed, out = smoke.run(prof)
+    print(f"results: {out}")
+    if failed:
+        print("SMOKE TEST FAILED, so restore: `zentv restore --yes` (latest snapshot for this TV).")
+        return 8
+    print("smoke test passed.")
+    return 0
+
+
 # ---- parser ----------------------------------------------------------------------------------
 
 
@@ -236,6 +355,40 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--keep-usb-debugging", action="store_true", help="switch off Wireless debugging only")
     s.add_argument("--verify-only", action="store_true", help="send nothing; only check the ports")
     s.set_defaults(func=cmd_adb_close)
+
+    s = sub.add_parser(
+        "plan", help="what apply would change on this TV, from devices/<profile>/debloat.yaml (read-only)"
+    )
+    s.add_argument("--include", action="append", help="add a default-off or high-risk target by name")
+    s.set_defaults(func=cmd_plan)
+
+    s = sub.add_parser("apply", help="snapshot, then disable/unhide per the plan (dry-run without --yes)")
+    s.add_argument("--yes", action="store_true", help="actually send the changes")
+    s.add_argument("--include", action="append", help="add a default-off or high-risk target by name")
+    s.add_argument(
+        "--settle", type=float, default=25.0, help="seconds to wait after the last change (default 25)"
+    )
+    s.set_defaults(func=cmd_apply)
+
+    s = sub.add_parser(
+        "restore", help="replay a snapshot of this TV and read it back (dry-run without --yes)"
+    )
+    s.add_argument("snapshot", nargs="?", help="snapshot file (default: this TV's latest)")
+    s.add_argument("--yes", action="store_true")
+    s.set_defaults(func=cmd_restore)
+
+    s = sub.add_parser("check", help="read-only drift report against a snapshot (default: latest)")
+    s.add_argument("snapshot", nargs="?")
+    s.set_defaults(func=cmd_check)
+
+    s = sub.add_parser("snapshots", help="list this TV's snapshots")
+    s.set_defaults(func=cmd_snapshots)
+
+    s = sub.add_parser(
+        "smoke-test", help="interactive checklist from the device profile; any failure means restore"
+    )
+    s.add_argument("device", help="device profile name, e.g. tcl-g03-beyondtv4")
+    s.set_defaults(func=cmd_smoke)
     return p
 
 
