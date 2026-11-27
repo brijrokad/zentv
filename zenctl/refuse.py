@@ -17,8 +17,8 @@ SAFE_TOKEN = re.compile(r"^[A-Za-z0-9._:/=@,+\-]+$")
 RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("pm uninstall (any form)", re.compile(r"(^|\s)(pm|cmd\s+package)\s+uninstall\b|(^|\s)uninstall(\s|$)")),
     ("pm clear", re.compile(r"\b(pm|cmd\s+package)\s+clear\b")),
-    ("pm hide", re.compile(r"\b(pm|cmd\s+package)\s+(hide|unhide)\b")),
-    ("pm suspend", re.compile(r"\b(pm|cmd\s+package)\s+(suspend|unsuspend)\b")),
+    ("pm hide", re.compile(r"\b(pm|cmd\s+package)\s+hide\b")),  # unhide only via commands.unhide()
+    ("pm suspend", re.compile(r"\b(pm|cmd\s+package)\s+suspend\b")),
     ("dpm", re.compile(r"(^|\s)dpm(\s|$)|\bcmd\s+device_policy\b")),
     ("setprop persist.*", re.compile(r"\bsetprop\s+persist\.")),
     (

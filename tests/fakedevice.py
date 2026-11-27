@@ -71,7 +71,7 @@ class FakeDevice:
                     return f"Unable to find package: {pkg}\n"
                 flags = "SYSTEM PERSISTENT" if p.get("persistent") else ("SYSTEM" if p.get("system") else "")
                 hidden = str(bool(p.get("hidden"))).lower()
-                enabled = 0 if p.get("enabled", True) else 3
+                enabled = p.get("state", 0 if p.get("enabled", True) else 3)
                 return (
                     f"Packages:\n  Package [{pkg}] (1a2b):\n    pkgFlags=[ {flags} ]\n"
                     f"    User 0: ceDataInode=1 installed=true hidden={hidden} "
@@ -114,6 +114,18 @@ class FakeDevice:
                 )
             case ["settings", "get", ns, key]:
                 return self.settings.get(ns, {}).get(key, "null") + "\n"
+            case ["pm", "disable-user", "--user", "0", pkg]:
+                p = self._need(pkg)
+                p["enabled"], p["state"] = False, 3
+                return f"Package {pkg} new state: disabled-user\n"
+            case ["pm", "enable", "--user", "0", pkg]:
+                p = self._need(pkg)
+                p["enabled"], p["state"] = True, 1
+                return f"Package {pkg} new state: enabled\n"
+            case ["pm", "unhide", "--user", "0", pkg]:
+                p = self._need(pkg)
+                p["hidden"] = False
+                return f"Package {pkg} new hidden state: false\n"
             case ["settings", "put", ns, key, value]:
                 self.settings.setdefault(ns, {})[key] = value
                 return ""
@@ -139,6 +151,11 @@ class FakeDevice:
             case ["cat", "/proc/uptime"]:
                 return "12345.67 23456.78\n"
         raise _Fail(UNSUPPORTED, f"FakeDevice: unsupported command {' '.join(a)}")
+
+    def _need(self, pkg: str) -> dict:
+        if pkg not in self.packages:
+            raise _Fail(1, f"Unknown package: {pkg}")
+        return self.packages[pkg]
 
     def _pm_list(self, flags: list[str]) -> str:
         out = []
@@ -219,6 +236,12 @@ def tcl_g03() -> FakeDevice:
             "com.tcl.esticker": _pkg(uid=10204, enabled=False),
             "com.tcl.vendorhome": _pkg(uid=10205),  # synthetic: a vendor package that also answers HOME
             "com.tcl.messagebox": {**_pkg(uid=10206), "hidden": True},  # arrived hidden by another tool
+            "com.google.android.apps.mediashell": {**_pkg(uid=10024), "hidden": True},  # as on the real TCL
+            "com.google.android.katniss": {**_pkg(uid=10022), "hidden": True},
+            "android.autoinstalls.config.google.gtvpai": _pkg(uid=10207),
+            "com.tcl.dashboard": _pkg(uid=10208, installer="com.android.vending"),
+            "com.tcl.ocean.instructions": _pkg(uid=10209),
+            "com.tcl.partnercustomizer": _pkg(uid=10210),
         }
     )
     return FakeDevice(

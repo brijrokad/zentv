@@ -59,14 +59,43 @@ class Kind(Enum):
 class Record:
     """A value a state change touches. Its pre-state is read and stored before the change."""
 
-    kind: str  # "setting" (M1); "package", "home", "appop" arrive with their changes
-    key: str  # e.g. "global/adb_wifi_enabled"
+    kind: str  # "setting" or "package" (M2); "home", "appop" arrive with the launcher (M4)
+    key: str  # e.g. "global/adb_wifi_enabled", or a package name
 
     def reader(self) -> Command:
         if self.kind == "setting":
             ns, k = self.key.split("/", 1)
             return settings_get(ns, k)
+        if self.kind == "package":
+            return dumpsys("package", check_package(self.key))
         raise InvalidArgument(f"no reader for record kind {self.kind!r}")
+
+    def parse(self, output: str) -> str | None:
+        """The recorded value: a setting's text, or a package's user-0 state."""
+        if self.kind == "setting":
+            v = output.strip()
+            return None if v in ("", "null") else v
+        if self.kind == "package":
+            return package_state(output)
+        raise InvalidArgument(f"no parser for record kind {self.kind!r}")
+
+
+USER0_STATE = re.compile(r"User 0:.*?\binstalled=(true|false)\b.*?\bhidden=(true|false)\b.*?\benabled=(\d+)")
+
+
+def package_state(dumpsys_output: str) -> str | None:
+    """'enabled=<n> hidden=<bool> installed=<bool>' for user 0, or None if the package is unknown.
+
+    enabled: 0 default, 1 enabled, 2 disabled, 3 disabled-user, 4 disabled-until-used.
+    """
+    m = USER0_STATE.search(dumpsys_output)
+    if not m:
+        return None
+    return f"enabled={m[3]} hidden={m[2]} installed={m[1]}"
+
+
+def parse_state(value: str | None) -> dict[str, str]:
+    return dict(kv.split("=", 1) for kv in (value or "").split())
 
 
 @dataclass(frozen=True)
@@ -75,7 +104,8 @@ class Command:
     kind: Kind
     summary: str
     records: tuple[Record, ...] = ()
-    # Only adb_network_off: closing ADB is allowed even on an unconfirmed profile (rule 10).
+    # Exempt from the read-only gate: adb_network_off (rule 10) and a restore's `pm enable`, which
+    # replays a snapshot taken on this same TV and must work even after a firmware update.
     gate_exempt: bool = False
     _token: object = field(default=None, repr=False, compare=False)
 
@@ -203,4 +233,35 @@ def adb_network_off(key: str) -> Command:
         f"switch {key} off",
         records=(Record("setting", f"global/{key}"),),
         gate_exempt=True,
+    )
+
+
+def disable_user(package: str) -> Command:
+    """`pm disable-user --user 0 <pkg>`: reversible with `pm enable` (rule 6)."""
+    p = check_package(package)
+    return _cmd(
+        ["pm", "disable-user", "--user", "0", p], Kind.CHANGE, f"disable {p}", records=(Record("package", p),)
+    )
+
+
+def enable(package: str, for_restore: bool = False) -> Command:
+    """`pm enable --user 0 <pkg>`. `for_restore` only from restore.py, replaying this TV's snapshot."""
+    p = check_package(package)
+    return _cmd(
+        ["pm", "enable", "--user", "0", p],
+        Kind.CHANGE,
+        f"enable {p}",
+        records=(Record("package", p),),
+        gate_exempt=for_restore,
+    )
+
+
+def unhide(package: str, approved: frozenset[str]) -> Command:
+    """`pm unhide --user 0 <pkg>`, only for packages the owner listed under restore_hidden (rule 6
+    exception, Checkpoint 4). It undoes another tool's `pm hide`; zentv never hides anything."""
+    p = check_package(package)
+    if p not in approved:
+        raise InvalidArgument(f"{p} is not in the device's approved restore_hidden list")
+    return _cmd(
+        ["pm", "unhide", "--user", "0", p], Kind.CHANGE, f"unhide {p}", records=(Record("package", p),)
     )

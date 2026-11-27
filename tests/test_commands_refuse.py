@@ -37,6 +37,7 @@ RULE5 = [
 ]
 
 ALLOWED = [
+    "pm unhide --user 0 com.google.android.katniss",
     "settings put global adb_enabled 0",
     "settings put global adb_wifi_enabled 0",
     "getprop ro.product.model",
@@ -107,14 +108,18 @@ SAMPLE_ARGS = {
     "appops_query_op": [("GET_USAGE_STATS",)],
     "read_file": [("/proc/meminfo",)],
     "adb_network_off": [("adb_wifi_enabled",), ("adb_enabled",)],
+    "disable_user": [("com.example.promo",)],
+    "enable": [("com.example.promo",), ("com.example.promo", True)],
+    "unhide": [("com.google.android.katniss", frozenset({"com.google.android.katniss"}))],
 }
+NOT_CONSTRUCTORS = {"check_package", "package_state", "parse_state"}
 
 
 def _constructors():
     return {
         n: f
         for n, f in inspect.getmembers(C, inspect.isfunction)
-        if f.__module__ == C.__name__ and not n.startswith("_") and n not in {"check_package"}
+        if f.__module__ == C.__name__ and not n.startswith("_") and n not in NOT_CONSTRUCTORS
     }
 
 
@@ -134,8 +139,21 @@ def test_constructor_outputs_pass_refuse_and_changes_have_readers(name):
                 assert r.reader().kind is C.Kind.READ
 
 
-def test_only_adb_close_is_gate_exempt():
+def test_only_adb_close_and_restore_enable_are_gate_exempt():
     for name, arglist in SAMPLE_ARGS.items():
         for args in arglist:
             cmd = _constructors()[name](*args)
-            assert cmd.gate_exempt == (name == "adb_network_off")
+            expected = name == "adb_network_off" or (name == "enable" and len(args) == 2 and args[1])
+            assert cmd.gate_exempt == expected, (name, args)
+
+
+def test_unhide_only_for_approved_packages():
+    with pytest.raises(InvalidArgument):
+        C.unhide("com.tcl.usercenter", frozenset({"com.google.android.katniss"}))
+
+
+def test_package_state_parsing():
+    out = "  User 0: ceDataInode=1 installed=true hidden=true suspended=false enabled=0 instant=false"
+    assert C.package_state(out) == "enabled=0 hidden=true installed=true"
+    assert C.parse_state(C.package_state(out)) == {"enabled": "0", "hidden": "true", "installed": "true"}
+    assert C.package_state("Unable to find package: x.y") is None

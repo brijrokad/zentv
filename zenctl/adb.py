@@ -101,8 +101,7 @@ class Session:
         for rec in cmd.records:
             if rec.key in self.recorded:
                 continue  # first record wins
-            value = self.read(rec.reader()).strip()
-            self.recorded[rec.key] = None if value in ("", "null") else value
+            self.recorded[rec.key] = rec.parse(self.read(rec.reader()))
 
     def change(self, cmd: Command) -> ShellResult | None:
         if cmd.kind is not Kind.CHANGE:
