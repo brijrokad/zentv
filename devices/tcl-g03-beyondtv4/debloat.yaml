@@ -6,8 +6,10 @@
 # Starting state (NOT made by zentv; recorded so restore never "undoes" it):
 #   disabled: com.google.android.feedback, .onetimeinitializer, .partnersetup, .syncadapters.calendar,
 #             com.tcl.bi, com.tcl.esticker, com.tcl.guard, com.tcl.waterfall.overseas
-#   hidden (pm hide, by an earlier tool): mediashell, katniss, play.games, videos, youtube.tvmusic,
-#             com.tcl.assistant, com.tcl.gallery, com.tcl.messagebox, com.tcl.smartalexa, com.tcl.usercenter
+#             (lastDisabledCaller: shell, so an ADB tool disabled these before zentv)
+#   hidden by Google TV's own setup (lastDisabledCaller: com.google.android.tungsten.setupwraith; some
+#             also enabled=2): mediashell, katniss, play.games, videos, youtube.tvmusic, com.tcl.assistant,
+#             com.tcl.gallery, com.tcl.messagebox, com.tcl.smartalexa, com.tcl.usercenter
 # Most of what the reference lists remove is therefore already off. This plan is the remainder.
 
 schema: 1
@@ -57,16 +59,12 @@ targets:
     source: "survey: enabled; off by choice on a 65P735 (tcl-g03-google-tv notes)"
     owner: "keep enabled (2026-11-26)"
 
-# Owner decision (2026-11-26, approved at Checkpoint 4): undo the earlier tool's `pm hide` for casting and voice.
-# Uses the narrow rule-6 addition (snapshotted `pm unhide` of exactly these packages, dry-run, --yes)
-# and the profile confirmed at Checkpoint 4. zentv never runs `pm hide`.
-restore_hidden:
-  - package: com.google.android.apps.mediashell
-    reason: "Chromecast built-in. Hidden now; casting to this TV cannot work until it is unhidden."
-    enabled_state: 0   # default: unhide alone is enough
-  - package: com.google.android.katniss
-    reason: "Google voice search. Hidden now. Voice also needs the remote paired over Bluetooth (key log: BTRemoterRcUnConnect)."
-    enabled_state: 0
+# Owner decision (2026-11-26): restore casting (mediashell) and voice (katniss). NOT POSSIBLE over ADB on
+# this build: the supervised run (2026-11-27) got `SecurityException: ... MANAGE_USERS` for
+# `pm unhide` from the shell. The apps were hidden by Google TV's setup (setupwraith), and only a
+# privileged app can un-hide them. So restore_hidden is empty and zentv leaves them as found.
+# Options are outside zentv (see PROFILE.md line 17).
+restore_hidden: []
 
 # Not proposed, with the reason, including every disagreement with the reference lists:
 not_proposed:
