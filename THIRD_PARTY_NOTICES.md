@@ -14,6 +14,12 @@ zentv contains **no code copied** from other projects. The concepts below were s
 
 Device facts in `devices/*/PROFILE.md` cite cleanyourtv and couch-tv device notes as data.
 
+## Images
+
+| Files | Source | Terms |
+|---|---|---|
+| Home scenes `scene-night`, `scene-golden`, `scene-water`, `scene-fog`, `scene-dawn` (+ `-fg` cut-outs, `-glass` fills, `@2x` 4K copies) | couch-tv (© 2026 Seagey), `tv-home/web/backgrounds/` at `bc5df03a`. Made for couch-tv with an AI image model from text only; the 4K copies are upscaled with Real-ESRGAN. | couch-tv's `CREDITS.md`: "Use them however you like." Thanks to couch-tv. |
+
 ## Runtime and development dependencies
 
 | Package | License | Use |
