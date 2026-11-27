@@ -38,17 +38,29 @@ jobs:
           java-version: "17"
       - name: Verify the Gradle wrapper jar (official 9.9.2 checksum)
         run: echo "621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8  launcher/gradle/wrapper/gradle-wrapper.jar" | sha256sum -c -
-      - name: Build the M3a spike (dependency verification on)
+      - name: Build, unit tests and lint (dependency verification on, no private logos)
         working-directory: launcher
-        run: ./gradlew --no-daemon assembleSpike
-      - name: No permissions, no native code in the spike APK
+        run: >-
+          ./gradlew --no-daemon -Pzentv.localIcons=false
+          assembleCoreRelease assembleWeatherRelease
+          testCoreDebugUnitTest testWeatherDebugUnitTest lintCoreRelease lintWeatherRelease
+      - name: "APK rules: core has no permissions, weather only INTERNET, no native code, no logos, core < 10 MB"
         run: |
-          APK=launcher/app/build/outputs/apk/spike/app-spike.apk
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
-          perms=$("$AAPT2" dump permissions "$APK" | grep -c uses-permission || true)
-          libs=$(unzip -l "$APK" | grep -c '\.so$' || true)
-          echo "permissions=$perms native_libs=$libs"
-          test "$perms" = 0 && test "$libs" = 0
+          CORE=launcher/app/build/outputs/apk/core/release/app-core-release-unsigned.apk
+          WX=launcher/app/build/outputs/apk/weather/release/app-weather-release-unsigned.apk
+          core_perms=$("$AAPT2" dump permissions "$CORE" | grep uses-permission || true)
+          wx_perms=$("$AAPT2" dump permissions "$WX" | grep uses-permission | sed "s/.*name='\([^']*\)'.*/\1/" | sort -u | tr '\n' ' ')
+          echo "core permissions: [${core_perms}]"
+          echo "weather permissions: [${wx_perms}]"
+          test -z "$core_perms"
+          test "$wx_perms" = "android.permission.INTERNET "
+          for apk in "$CORE" "$WX"; do
+            test "$(unzip -l "$apk" | grep -c '\.so$' || true)" = 0
+            test "$(unzip -l "$apk" | grep -c 'assets/consoles/' || true)" = 0
+          done
+          size=$(stat -c %s "$CORE"); echo "core size: $size bytes"
+          test "$size" -lt 10485760
 
   secrets:
     runs-on: ubuntu-24.04

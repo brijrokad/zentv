@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">zentv</string>
+    <string name="home_key_label">zentv: Home button</string>
+    <string name="home_key_description">Lets the remote\'s Home button open zentv. It sees only key presses and cannot read the screen or anything you type.</string>
+</resources>

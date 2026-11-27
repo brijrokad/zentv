@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="home_key_description">zentv spike: sees only key presses, to test whether the Home button can bring zentv to the front. It cannot read the screen.</string>
-</resources>

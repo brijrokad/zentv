@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No cleartext anywhere; only the system's CAs. Android's network security config cannot block hosts,
+     so the Open-Meteo-only rule is enforced in code (OpenMeteo.checked) and covered by a unit test. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

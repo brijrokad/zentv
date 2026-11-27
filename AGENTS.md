@@ -29,7 +29,7 @@ zentv makes an Android/Google TV calm: debloat, privacy, and a fast launcher ove
 
 ## Working on the code
 
-- Layout: `zenctl/` is the Python package (the command is `zentv`), `tests/`, `safety/`, `devices/`, `docs/`. `launcher/` (Kotlin) arrives in M3.
+- Layout: `zenctl/` is the Python package (the command is `zentv`), `tests/`, `safety/`, `devices/`, `docs/`. `launcher/` is the Kotlin launcher (`core` and `weather` flavours; checks: `cd launcher && ./gradlew assembleCoreRelease testCoreDebugUnitTest lintCoreRelease`).
 - Setup: `uv sync`, then `scripts/install-hooks.sh` (gitleaks + ruff pre-commit).
 - Checks: `uv run ruff check . && uv run ruff format --check . && uv run pytest -q`. The tests use `tests/fakedevice.py` and a fake `adb`; they never need a TV.
 - Every new TV command is a constructor in `zenctl/commands.py`:

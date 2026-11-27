@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- zentv's own banner art (night sky, moon, two ridges, a "z"). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF141A33" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF2A3566" android:pathData="M0,110h320v70h-320z" />
+    <path android:fillColor="#FFF4EBD6" android:pathData="M214,52a18,18 0,1 0,36 0a18,18 0,1 0,-36 0z" />
+    <path android:fillColor="#FF1D2547" android:pathData="M0,132L52,96 92,118 150,70 214,120 262,92 320,124V180H0z" />
+    <path android:fillColor="#FF0D1020" android:pathData="M0,152L70,124 128,146 196,112 258,148 320,136V180H0z" />
+    <path android:fillColor="#00000000" android:strokeColor="#FFF3F6FA" android:strokeWidth="7" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M40,40h34l-34,40h34" />
+</vector>
