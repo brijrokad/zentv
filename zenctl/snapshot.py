@@ -53,13 +53,18 @@ def find(key: str, digest: str) -> Path | None:
     return hits[0] if hits else None  # the oldest one is the original pre-state
 
 
+def _debloat(key: str) -> list[Path]:
+    """Debloat snapshots only; launcher snapshots (launcher-*.json) belong to zenctl.launcher."""
+    return sorted(p for p in _dir(key).glob("*.json") if not p.name.startswith("launcher-"))
+
+
 def latest(key: str) -> Path | None:
-    hits = sorted(_dir(key).glob("*.json"))
+    hits = _debloat(key)
     return hits[-1] if hits else None
 
 
 def all_for(key: str) -> list[Path]:
-    return sorted(_dir(key).glob("*.json"))
+    return _debloat(key)
 
 
 def load(path: Path) -> Snapshot:

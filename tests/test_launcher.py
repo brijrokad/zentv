@@ -111,3 +111,15 @@ def test_enable_dry_run_sends_nothing(tcl, tmp_path):
     _, snap = launcher.enable_home_key(s2, ident2)
     assert snap is None and len(s2.planned) == 4
     assert (dict(tcl.settings["secure"]), dict(tcl.appops)) == before
+
+
+def test_debloat_snapshot_lookups_ignore_launcher_snapshots(tcl, tmp_path):
+    """Regression (TCL, 2026-11-27): `zentv restore` picked launcher-*.json as the latest snapshot."""
+    from zenctl import snapshot
+
+    s, ident = _session(tcl)
+    launcher.install(s, _apk(tmp_path), package=PKG)
+    launcher.enable_home_key(s, ident)
+    assert launcher.latest_launcher_snapshot(ident) is not None
+    assert snapshot.latest(snapshot.device_key(ident)) is None
+    assert snapshot.all_for(snapshot.device_key(ident)) == []
