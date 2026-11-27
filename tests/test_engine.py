@@ -55,8 +55,15 @@ DEBLOAT = {
 }
 
 
+def _unhide_capable():
+    """A build whose shell may `pm unhide` (some boxes allow it; the real TCL AR10 does not)."""
+    dev = tcl_g03()
+    dev.shell_can_unhide = True
+    return dev
+
+
 def _setup(dev=None, yes=False, confirmed=True):
-    dev = dev or tcl_g03()
+    dev = dev or _unhide_capable()
     s = Session(dev, yes=yes)
     ident = device.identify(s)
     prof = device.Profile(
@@ -155,7 +162,7 @@ def test_round_trip_restores_every_disabled_package():
     cmds, mismatches, notes = engine.restore(s2, ident2, snap)
     assert mismatches == []
     assert len(cmds) == 3 and all(c.startswith("pm enable --user 0") for c in cmds)
-    assert any("un-hidden" in n for n in notes)  # restore never re-hides
+    assert any("never hides" in n for n in notes)
     after = _pkg_states(dev)
     for pkg in (
         "android.autoinstalls.config.google.gtvpai",
@@ -298,7 +305,7 @@ def test_repo(tmp_path, monkeypatch):
 
 
 def test_cli_apply_dry_run_then_yes_then_restore(fake_adb, test_repo, capsys):
-    state = fake_adb(tcl_g03())
+    state = fake_adb(_unhide_capable())
     assert cli.main(["plan"]) == 0
     assert "allowed" in capsys.readouterr().out
 
@@ -320,3 +327,24 @@ def test_cli_apply_dry_run_then_yes_then_restore(fake_adb, test_repo, capsys):
     assert cli.main(["restore", "--yes"]) == 0
     assert "every recorded package reads back as before" in capsys.readouterr().out
     assert json.loads(state.read_text())["packages"]["com.tcl.dashboard"]["enabled"] is True
+
+
+def test_apply_stops_on_a_refused_change_and_names_the_restore():
+    """The real TCL AR10 refuses `pm unhide` (MANAGE_USERS): apply stops there, the disables before it
+    are done and read back, and the error says how to restore."""
+    from zenctl.errors import AdbError
+
+    dev, s, ident, prof = _setup(tcl_g03(), yes=True)
+    with pytest.raises(AdbError) as e:
+        engine.apply(s, ident, _plan(s, ident, prof), settle_s=0)
+    msg = str(e.value)
+    assert "MANAGE_USERS" in msg and "3 of 5 change(s) were made" in msg and "zentv restore" in msg
+    assert dev.packages["com.tcl.dashboard"]["state"] == 3
+    assert dev.packages["com.google.android.katniss"]["hidden"] is True
+    snap = snapshots.load(snapshots.latest(snapshots.device_key(ident)))
+    assert [a["done"] for a in snap.actions] == [True, True, True, False, False]
+    assert engine.check(Session(dev), snap) == []  # the never-done un-hides are not drift
+    _, s2, ident2, _ = _setup(dev, yes=True)
+    cmds, mismatches, notes = engine.restore(s2, ident2, snap)
+    assert mismatches == [] and len(cmds) == 3 and dev.packages["com.tcl.dashboard"]["enabled"] is True
+    assert sum("never completed" in n for n in notes) == 2

@@ -86,10 +86,25 @@ def create(ident: Identity, plan: Plan, records: dict[str, str | None]) -> Snaps
         plan_digest=plan.digest,
         created_utc=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         records=dict(records),
-        actions=[{"op": a.op, "package": a.package} for a in plan.actions],
+        actions=[{"op": a.op, "package": a.package, "done": False} for a in plan.actions],
     )
     p = _dir(key) / f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{plan.digest}.json"
     p.write_text(snap.to_json())
     p.chmod(0o600)
     snap.path = str(p)
     return snap
+
+
+def mark_done(snap: Snapshot, op: str, package: str) -> None:
+    """Record that one action was sent and read back (so restore/check use only completed actions)."""
+    for a in snap.actions:
+        if a["op"] == op and a["package"] == package:
+            a["done"] = True
+    p = Path(snap.path)
+    p.write_text(snap.to_json())
+    p.chmod(0o600)
+
+
+def completed(snap: Snapshot) -> list[dict]:
+    """Actions known to be done. Older snapshots without the flag count every action as done."""
+    return [a for a in snap.actions if a.get("done", True)]

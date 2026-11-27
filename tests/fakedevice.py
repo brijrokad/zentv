@@ -31,6 +31,7 @@ class FakeDevice:
     transport: str = "WIFI"
     mem_kb: tuple[int, int] = (2000000, 600000)
     admins: list[str] = field(default_factory=list)
+    shell_can_unhide: bool = True  # False on builds where `pm unhide` needs MANAGE_USERS (TCL AR10)
     log: list[str] = field(default_factory=list)
 
     # ---- transport protocol ----
@@ -123,6 +124,12 @@ class FakeDevice:
                 p["enabled"], p["state"] = True, 1
                 return f"Package {pkg} new state: enabled\n"
             case ["pm", "unhide", "--user", "0", pkg]:
+                if not self.shell_can_unhide:  # real TCL AR10 output, 2026-11-26
+                    raise _Fail(
+                        255,
+                        "Exception occurred while executing 'unhide':\njava.lang.SecurityException: "
+                        "Neither user 2000 nor current process has android.permission.MANAGE_USERS.",
+                    )
                 p = self._need(pkg)
                 p["hidden"] = False
                 return f"Package {pkg} new hidden state: false\n"
@@ -274,6 +281,7 @@ def tcl_g03() -> FakeDevice:
         appops={"com.tcl.bi/GET_USAGE_STATS": "allow"},
         tv_inputs=["com.tcl.tvinput/.TvPassThroughService/HW15", "com.tcl.tvinput/.TunerService/HW0"],
         mem_kb=(1900000, 500000),
+        shell_can_unhide=False,
     )
 
 

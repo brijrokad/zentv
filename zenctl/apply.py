@@ -58,7 +58,15 @@ def apply(
     snap = S.create(ident, plan, session.recorded) if session.yes else None
     sent = []
     for cmd, action in zip(cmds, plan.actions, strict=True):
-        session.change(cmd)
+        try:
+            session.change(cmd)
+        except ZenError as e:
+            if not session.yes:
+                raise
+            done = f"{len(sent)} of {len(cmds)} change(s) were made and read back before this. "
+            raise type(e)(
+                f"{e}\nStopped. {done}Restore with: zentv restore {snap.path if snap else ''} --yes"
+            ) from e
         if not session.yes:
             continue
         st = _state(session, action.package)
@@ -69,6 +77,8 @@ def apply(
                 f"Stopped. Restore with: zentv restore {snap.path if snap else ''} --yes"
             )
         sent.append(cmd.shell_string())
+        if snap is not None:
+            S.mark_done(snap, action.op, action.package)
     if session.yes and settle_s:
         say(f"Waiting {settle_s:.0f} s so the package state is written to disk before any reboot ...")
         time.sleep(settle_s)
@@ -90,14 +100,17 @@ def restore(
         raise Refused("this snapshot was taken on a different TV; nothing was sent")
     session.recorded.update(snap.records)
     cmds, notes = [], []
-    for a in reversed(snap.actions):
+    for a in snap.actions:
+        if not a.get("done", True):
+            notes.append(f"{a['package']}: planned {a['op']} was never completed; nothing to undo")
+    for a in reversed(S.completed(snap)):
         pkg = a["package"]
         pre = C.parse_state(snap.records.get(pkg))
         if a["op"] == "unhide":
             notes.append(
-                f"{pkg}: was un-hidden at the owner's request; restore leaves it visible "
-                "(re-hiding needs `pm hide`, which zentv never runs)"
+                f"{pkg}: an un-hide was planned; restore never hides anything (zentv has no `pm hide`)"
             )
+
             continue
         if pre.get("enabled") in DISABLED_STATES:
             notes.append(f"{pkg}: was already disabled before zentv; left as is")
@@ -112,7 +125,7 @@ def restore(
 def verify(session: Session, snap: S.Snapshot) -> list[Mismatch]:
     """Read back every package zentv disabled and compare with its pre-state class (enabled/disabled)."""
     out = []
-    for a in snap.actions:
+    for a in S.completed(snap):
         if a["op"] != "disable":
             continue
         pkg = a["package"]
@@ -127,7 +140,7 @@ def verify(session: Session, snap: S.Snapshot) -> list[Mismatch]:
 def check(session: Session, snap: S.Snapshot) -> list[str]:
     """Drift since `snap` was applied. Read-only; reports, never fixes."""
     drift = []
-    for a in snap.actions:
+    for a in S.completed(snap):
         st = _state(session, a["package"])
         if a["op"] == "disable" and st.get("enabled") not in DISABLED_STATES:
             drift.append(f"{a['package']}: zentv disabled it, now enabled={st.get('enabled')}")
