@@ -2,7 +2,7 @@
 
 *Make your Android TV calm again: debloat, block ads and telemetry, and swap in a fast, clutter-free launcher over Wi-Fi ADB. No root, fully reversible.*
 
-**Status: M1 (foundation). Nothing here changes a TV yet.** The current commands are read-only, apart from `adb-close`, which switches network ADB **off**:
+**Status: M2 (debloat engine).** Read-only commands, plus `apply`/`restore`, which are dry-runs unless you pass `--yes`, and only work on a TV whose profile you've confirmed:
 
 | Command | What it does |
 |---|---|
@@ -12,6 +12,11 @@
 | `zentv privacy` | Read-only: Private DNS, accessibility services, notification listeners, usage access, device admins, sideloaded apps |
 | `zentv safety PKG…` | Would zentv refuse these packages? (`--offline --brand --device` works without a TV) |
 | `zentv adb-close [--yes]` | Switch network ADB off and verify from your Mac that it's closed. A dry-run without `--yes`. |
+| `zentv plan` | What `apply` would change, from `devices/<profile>/debloat.yaml` (read-only) |
+| `zentv apply [--yes]` | Record a snapshot first, then disable/un-hide one package per call, reading each back |
+| `zentv restore [SNAPSHOT] [--yes]` | Replay this TV's snapshot and read every package back. Works even after a firmware update. |
+| `zentv check` / `zentv snapshots` | Read-only drift report / list this TV's snapshots |
+| `zentv smoke-test <device>` | Interactive checklist from the profile. Any failure means restore. |
 
 ## Install (for development)
 

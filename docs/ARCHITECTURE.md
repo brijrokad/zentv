@@ -135,6 +135,10 @@ commands.py                         adb.py (Transport)
   5. With `--yes`, send one change per call, read each back, and stop at the first failure (it prints the restore command).
   6. Wait for the package-state write to settle (about 25 s, a lesson from the TCL notes) before suggesting a reboot.
 - **`restore <snapshot>`:** replays the inverses in reverse order, for exactly the keys recorded. Packages the owner had disabled before stay disabled. Then it reads back every key and exits non-zero with a mismatch table.
+- **Implemented in M2.** Two details were settled while building it:
+  - The snapshot digest comes from the plan's **intent** (the selected targets and restores), not the remaining actions. That way a retry after a half-finished apply finds the original snapshot.
+  - `restore`'s `pm enable` is **exempt from the read-only gate**, but only when the snapshot's device key matches this TV. A firmware update closes the gate, and restore must still work after it.
+- **Un-hide exception (Checkpoint 4):** `commands.unhide()` only accepts packages listed under the device's `restore_hidden`. `restore` never re-hides, because zentv has no `pm hide`.
 - **`check`:** read-only. It compares the live TV with the last applied snapshot's intended state and reports drift. It never changes anything.
 
 ### 3.6 Launcher commands (run in M4, specified now)

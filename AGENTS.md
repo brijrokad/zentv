@@ -16,7 +16,7 @@ zentv makes an Android/Google TV calm: debloat, privacy, and a fast launcher ove
    - `pm uninstall` (any form), `pm clear`, `pm hide`, `pm suspend`, `dpm`, `setprop persist.*`.
    - The verifier settings, ADB switched **on**, getting around install confirmations, and any `pm grant` (including `WRITE_SECURE_SETTINGS` to zentv).
    - Background loops that re-apply anything. Drift is reported, never fixed.
-4. **Reversible only:** `pm disable-user --user 0`, `pm enable`, `cmd package set-home-activity`, the Home-helper accessibility setting, and on TCL only, the snapshotted `APP_AUTO_START`/`AUTO_START` app-op for zentv's own package. Everything a command touches is recorded **before** the change, and restore reads it back.
+4. **Reversible only:** `pm disable-user --user 0`, `pm enable`, `cmd package set-home-activity`, the Home-helper accessibility setting, on TCL only the snapshotted `APP_AUTO_START`/`AUTO_START` app-op for zentv's own package, and `pm unhide` only for packages a device's `debloat.yaml` lists under `restore_hidden` (undoing another tool's `pm hide`). Everything a command touches is recorded **before** the change, and restore reads it back.
 5. **Never disable** the stock home (`launcherx`, `tvlauncher`) or `setupwraith`, or anything in `safety/never_disable.yaml`. There is no flag that bypasses it.
 6. **Unconfirmed devices are read-only.** A profile becomes `confirmed` only in Phase 3, with the owner. Never hand-edit `devices/*/profile.yaml` to `confirmed`.
 7. **End every TV session with `zentv adb-close`**, and verify ADB is off.
