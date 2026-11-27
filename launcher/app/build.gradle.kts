@@ -90,10 +90,16 @@ dependencies {
 // assets/consoles/ at build time. They are other companies' trademarks, so they exist only in builds
 // made on the owner's Mac: CI never has the files and always builds the fallback logos.
 // Build without them on purpose with: ./gradlew -Pzentv.localIcons=false ...
-abstract class CopyLocalIcons : DefaultTask() {
+abstract class CopyIntoAssets : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val icons: ConfigurableFileCollection
+    abstract val sources: ConfigurableFileCollection
+
+    @get:Input
+    abstract val subdir: Property<String>
+
+    @get:Input
+    abstract val lowercaseNames: Property<Boolean>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -102,9 +108,12 @@ abstract class CopyLocalIcons : DefaultTask() {
     fun copy() {
         val out = outputDir.get().asFile
         out.deleteRecursively()
-        val dir = File(out, "consoles")
+        val dir = File(out, subdir.get())
         dir.mkdirs()
-        icons.files.filter { it.isFile }.forEach { it.copyTo(File(dir, it.name.lowercase()), overwrite = true) }
+        sources.files.filter { it.isFile }.forEach {
+            val name = if (lowercaseNames.get()) it.name.lowercase() else it.name
+            it.copyTo(File(dir, name), overwrite = true)
+        }
     }
 }
 
@@ -115,13 +124,26 @@ val localIcons = rootProject.layout.projectDirectory.dir("local-icons").asFileTr
     }
 }
 
+// The owner's wallpapers (launcher/wallpapers/, committed) and their time-of-day schedule, copied into
+// assets/wallpapers/. Only images and schedule.txt; the README stays out of the APK.
+val wallpapers = rootProject.layout.projectDirectory.dir("wallpapers").asFileTree.matching {
+    include("*.jpg", "*.jpeg", "*.png", "*.webp", "schedule.txt")
+}
+
 androidComponents {
     onVariants { variant ->
-        val task = tasks.register<CopyLocalIcons>(
-            "copyLocalIcons" + variant.name.replaceFirstChar { it.uppercase() }
-        ) {
-            if (includeLocalIcons) icons.from(localIcons)
+        val name = variant.name.replaceFirstChar { it.uppercase() }
+        val icons = tasks.register<CopyIntoAssets>("copyLocalIcons$name") {
+            if (includeLocalIcons) sources.from(localIcons)
+            subdir.set("consoles")
+            lowercaseNames.set(true)
         }
-        variant.sources.assets?.addGeneratedSourceDirectory(task, CopyLocalIcons::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(icons, CopyIntoAssets::outputDir)
+        val walls = tasks.register<CopyIntoAssets>("copyWallpapers$name") {
+            sources.from(wallpapers)
+            subdir.set("wallpapers")
+            lowercaseNames.set(false)
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(walls, CopyIntoAssets::outputDir)
     }
 }

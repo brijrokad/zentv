@@ -53,7 +53,7 @@ object Menus {
 
     fun settings(activity: Activity, onChanged: () -> Unit) {
         val prefs = Prefs(activity)
-        val sceneLabel = Scene.byId(prefs.scene)?.label ?: "Auto (by time of day)"
+        val sceneLabel = if (prefs.scene == "auto") "Auto (by time of day)" else Wallpapers.byId(activity, prefs.scene)?.label ?: "Auto (by time of day)"
         val items = mutableListOf(
             "Scene: $sceneLabel",
             "Clock: ${prefs.clockFace.label}",
@@ -65,7 +65,7 @@ object Menus {
             .setItems(items.toTypedArray()) { _, which ->
                 val again = { onChanged(); settings(activity, onChanged) }
                 when (which) {
-                    0 -> choose(activity, "Scene", listOf("auto" to "Auto (by time of day)") + Scene.entries.map { it.id to it.label }, prefs.scene) {
+                    0 -> choose(activity, "Scene", listOf("auto" to "Auto (by time of day)") + Wallpapers.all(activity).map { it.id to it.label }, prefs.scene) {
                         prefs.scene = it; again()
                     }
                     1 -> choose(activity, "Clock", ClockFace.entries.map { it.id to it.label }, prefs.clockFace.id) {

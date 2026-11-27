@@ -2,7 +2,6 @@ package io.github.brijrokad.zentv
 
 import android.app.Activity
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
@@ -94,7 +93,7 @@ class AllAppsActivity : Activity() {
         val cal = Calendar.getInstance()
         val hour = cal.get(Calendar.HOUR_OF_DAY)
         clock.text = formatClock(hour, cal.get(Calendar.MINUTE), prefs.clock24)
-        backdrop.show(prefs.sceneNow(hour), prefs.tint)
+        backdrop.show(Wallpapers.now(this, prefs, cal), prefs.tint)
         (application as ZentvApp).worker.execute {
             val loaded = catalog.load()
             runOnUiThread {
@@ -116,7 +115,7 @@ class AllAppsActivity : Activity() {
             TileView(this, d, e, 240f).also { t ->
                 t.favourite = e.key in favs
                 t.dimmed = e.key in hidden
-                t.setOnClickListener { Menus.open(this, catalog, e) { build(); backdrop.show(prefs.sceneNow(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)), prefs.tint) } }
+                t.setOnClickListener { Menus.open(this, catalog, e) { build(); backdrop.show(Wallpapers.now(this, prefs), prefs.tint) } }
                 t.setOnLongClickListener { Menus.options(this, prefs, e, onHome = false) { build() }; true }
                 grid.addView(t, GridLayout.LayoutParams().apply {
                     width = colWidth.toInt()
@@ -164,22 +163,21 @@ class AllAppsActivity : Activity() {
     /** The scene's glass layer, 110% size and a little more saturated, under the tint. */
     private inner class Backdrop : View(this@AllAppsActivity) {
         private var bmp: Bitmap? = null
-        private var shown: Scene? = null
+        private var shown: Background? = null
         private var tint = 45
         private val dst = RectF()
         private val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply {
             colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.25f) })
         }
 
-        fun show(s: Scene, tintPercent: Int) {
+        fun show(s: Background, tintPercent: Int) {
             tint = tintPercent
             if (s != shown) {
                 bmp?.recycle()
-                bmp = runCatching {
-                    context.assets.open(s.glass).use {
-                        BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 })
+                bmp = s.glass?.let { Wallpapers.decode(context, it, Bitmap.Config.RGB_565, 1920) }
+                    ?: Wallpapers.decode(context, s.image, Bitmap.Config.RGB_565, 1920)?.let { full ->
+                        Wallpapers.blur(full).also { if (it !== full) full.recycle() }
                     }
-                }.getOrNull()
                 shown = s
             }
             invalidate()

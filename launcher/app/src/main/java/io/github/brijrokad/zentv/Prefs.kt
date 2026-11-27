@@ -12,7 +12,7 @@ class Prefs(context: Context) {
     private val sp: SharedPreferences = context.getSharedPreferences("zentv", Context.MODE_PRIVATE)
     private val is24System = DateFormat.is24HourFormat(context)
 
-    /** "auto" (by time of day) or a scene id. */
+    /** "auto" (the schedule), "scene:<id>" or "wall:<file>" (older builds stored a bare scene id). */
     var scene: String
         get() = sp.getString("scene", "auto") ?: "auto"
         set(v) = sp.edit().putString("scene", v).apply()
@@ -39,8 +39,6 @@ class Prefs(context: Context) {
     var hidden: Set<String>
         get() = sp.getStringSet("hidden", emptySet())?.toSet() ?: emptySet()
         set(v) = sp.edit().putStringSet("hidden", v).apply()
-
-    fun sceneNow(hour: Int): Scene = Scene.byId(scene) ?: Scene.forHour(hour)
 
     companion object {
         const val MAX_FAVOURITES = 8

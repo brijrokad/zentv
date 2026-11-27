@@ -2,7 +2,6 @@ package io.github.brijrokad.zentv
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
@@ -29,7 +28,7 @@ import kotlin.math.sin
  * blur comes from the ready-made glass image rather than a live blur.
  */
 class SceneView(context: Context, private val d: Design) : View(context) {
-    var scene: Scene? = null
+    var scene: Background? = null
         private set
     var face: ClockFace = ClockFace.FROSTED
         set(v) { field = v; invalidate() }
@@ -45,7 +44,7 @@ class SceneView(context: Context, private val d: Design) : View(context) {
     private var bg: Bitmap? = null
     private var fg: Bitmap? = null
     private var glass: Bitmap? = null
-    private var loading: Scene? = null
+    private var loading: Background? = null
 
     private val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -87,15 +86,16 @@ class SceneView(context: Context, private val d: Design) : View(context) {
     }
 
     /** Switches scene; images are decoded off the UI thread and swapped in when ready. */
-    fun showScene(s: Scene) {
+    fun showScene(s: Background) {
         if (s == scene || s == loading) return
         loading = s
         val app = context.applicationContext as ZentvApp
         app.worker.execute {
-            val sample = Scene.sampleSizeFor(screenWidth())
-            val b = decode(s.background, Bitmap.Config.RGB_565, sample)
-            val g = decode(s.glass, Bitmap.Config.RGB_565, 1)
-            val f = s.cutout?.let { decode(it, Bitmap.Config.ARGB_8888, sample) }
+            val w = screenWidth()
+            val b = Wallpapers.decode(context, s.image, Bitmap.Config.RGB_565, w)
+            // Built-in scenes bring their own blurred layer; a wallpaper without one is blurred here.
+            val g = s.glass?.let { Wallpapers.decode(context, it, Bitmap.Config.RGB_565, 1920) } ?: b?.let { Wallpapers.blur(it) }
+            val f = s.cutout?.let { Wallpapers.decode(context, it, Bitmap.Config.ARGB_8888, w) }
             post {
                 if (loading != s) return@post
                 bg?.recycle(); fg?.recycle(); glass?.recycle()
@@ -108,14 +108,6 @@ class SceneView(context: Context, private val d: Design) : View(context) {
 
     private fun screenWidth(): Int = resources.displayMetrics.let { maxOf(it.widthPixels, it.heightPixels) }
 
-    private fun decode(path: String, config: Bitmap.Config, sample: Int): Bitmap? = runCatching {
-        context.assets.open(path).use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
-                inPreferredConfig = config
-                inSampleSize = sample
-            })
-        }
-    }.getOrNull()
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         fillPaint.shader = null
@@ -151,7 +143,7 @@ class SceneView(context: Context, private val d: Design) : View(context) {
     private fun text(): String = formatClock(hour, minute, h24)
 
     /** Sets up [p] for the scene's clock and returns the baseline and left edge of the text. */
-    private fun place(p: Paint, s: Scene, t: String): Triple<Float, Float, Float> {
+    private fun place(p: Paint, s: Background, t: String): Triple<Float, Float, Float> {
         p.typeface = clockFont
         p.textSize = d.px(s.clockSize)
         p.letterSpacing = -0.02f
@@ -164,7 +156,7 @@ class SceneView(context: Context, private val d: Design) : View(context) {
         return Triple(left, baseline, width)
     }
 
-    private fun frosted(c: Canvas, s: Scene) {
+    private fun frosted(c: Canvas, s: Background) {
         val t = text()
         val g = glass ?: return
         if (fillPaint.shader == null) {
@@ -200,7 +192,7 @@ class SceneView(context: Context, private val d: Design) : View(context) {
         c.drawText(t, x, y, sheen)
     }
 
-    private fun tall(c: Canvas, s: Scene) {
+    private fun tall(c: Canvas, s: Background) {
         val t = text()
         val (x, y, _) = place(plain, s, t)
         plain.shader = null
