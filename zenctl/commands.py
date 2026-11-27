@@ -79,6 +79,8 @@ class Record:
         if self.kind == "appop":
             pkg, op = self.key.split("/", 1)
             return appops_get(pkg, op)
+        if self.kind == "wifi":
+            return dumpsys("wifi")
         raise InvalidArgument(f"no reader for record kind {self.kind!r}")
 
     def parse(self, output: str) -> str | None:
@@ -90,6 +92,8 @@ class Record:
             return package_state(output)
         if self.kind == "appop":
             return appop_mode(output)
+        if self.kind == "wifi":
+            return wifi_entry_summary(output, int(self.key.split("/", 1)[1]))
         raise InvalidArgument(f"no parser for record kind {self.kind!r}")
 
 
@@ -115,6 +119,39 @@ def appop_mode(output: str) -> str:
     """'allow'/'ignore'/... from `appops get <pkg> <op>`; 'default' when nothing is set ("No operations.")."""
     m = APPOP_LINE.search(output)
     return m[2] if m and m[2] in APPOP_MODES else "default"
+
+
+WIFI_ENTRY = re.compile(r"^(?:- DSBLE )?ID: (\d+) SSID: .*?HIDDEN: (true|false)", re.MULTILINE)
+WIFI_CONNECTED = re.compile(r"Net ID: (-?\d+)")
+
+
+def wifi_entries(dumpsys_wifi: str) -> dict[int, dict[str, str]]:
+    """Saved Wi-Fi entries from `dumpsys wifi`, without the network names (never recorded)."""
+    head = dumpsys_wifi.split("mPerId=", 1)[0]
+    out: dict[int, dict[str, str]] = {}
+    starts = list(WIFI_ENTRY.finditer(head))
+    for i, m in enumerate(starts):
+        block = head[m.start() : starts[i + 1].start() if i + 1 < len(starts) else len(head)]
+        status = re.search(r"NetworkSelectionStatus (\w+)", block)
+        creator = re.search(r"\bcname=(\S+)", block)
+        recent = re.search(r"mostRecentlyConnected=(true|false)", block)
+        out[int(m[1])] = {
+            "hidden": m[2],
+            "status": status[1] if status else "?",
+            "creator": creator[1] if creator else "?",
+            "recent": recent[1] if recent else "?",
+        }
+    return out
+
+
+def wifi_connected_id(dumpsys_wifi: str) -> int | None:
+    m = WIFI_CONNECTED.search(dumpsys_wifi)
+    return int(m[1]) if m and int(m[1]) >= 0 else None
+
+
+def wifi_entry_summary(dumpsys_wifi: str, network_id: int) -> str | None:
+    e = wifi_entries(dumpsys_wifi).get(network_id)
+    return None if e is None else " ".join(f"{k}={v}" for k, v in e.items())
 
 
 def parse_state(value: str | None) -> dict[str, str]:
@@ -376,4 +413,18 @@ def appops_write_settings(package: str, op: str, for_restore: bool = False) -> C
         "persist app-ops",
         records=(Record("appop", f"{package}/{op}"),),
         gate_exempt=for_restore,
+    )
+
+
+def wifi_forget_network(network_id: int, approved: frozenset[int]) -> Command:
+    """`cmd wifi forget-network <id>`: a one-time owner-approved exception (TCL, 2026-11-27) to delete
+    stale saved Wi-Fi entries Settings can't show. NOT reversible. Callers also refuse the connected
+    network and any entry marked most-recently-connected (zenctl/wifi.py)."""
+    if not isinstance(network_id, int) or network_id < 0 or network_id not in approved:
+        raise InvalidArgument(f"Wi-Fi entry {network_id!r} is not in the owner-approved list")
+    return _cmd(
+        ["cmd", "wifi", "forget-network", str(network_id)],
+        Kind.CHANGE,
+        f"forget saved Wi-Fi entry {network_id}",
+        records=(Record("wifi", f"entry/{network_id}"),),
     )

@@ -133,7 +133,16 @@ SAMPLE_ARGS.update(
         "appops_write_settings": [(SPIKE, "APP_AUTO_START"), (SPIKE, "APP_AUTO_START", True)],
     }
 )
-NOT_CONSTRUCTORS = {"check_package", "package_state", "parse_state", "appop_mode"}
+SAMPLE_ARGS["wifi_forget_network"] = [(0, frozenset({0, 1, 2}))]
+NOT_CONSTRUCTORS = {
+    "check_package",
+    "package_state",
+    "parse_state",
+    "appop_mode",
+    "wifi_entries",
+    "wifi_connected_id",
+    "wifi_entry_summary",
+}
 
 
 def _constructors():

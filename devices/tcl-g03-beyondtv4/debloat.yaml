@@ -83,3 +83,9 @@ not_proposed:
   user_apps: "Streaming apps you installed (Netflix, YouTube, Prime, Hulu, Sling, Fubo, Disney+, Max, Paramount+, ESPN, ZEE5) are yours, not targets."
   com.tcl.bootadservice: "Not on this build (owner's held decision is moot)."
   com.tcl.usercenter: "Already hidden by an earlier tool; zentv leaves it as found (risk: high stays for other TCLs)."
+
+# One-time owner approval (2026-11-27): delete these stale saved Wi-Fi entries, which Settings can't
+# show (two hidden copies, one created by Google TV setup and preferred as "connect choice", plus one
+# disabled for a wrong password). Wi-Fi didn't rejoin after any restart, with or without zentv's
+# debloat. NOT reversible; the network in use is always refused. `zentv wifi forget`.
+wifi_forget_approved: [0, 1, 2]

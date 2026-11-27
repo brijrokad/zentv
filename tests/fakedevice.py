@@ -31,11 +31,11 @@ class FakeDevice:
     transport: str = "WIFI"
     mem_kb: tuple[int, int] = (2000000, 600000)
     admins: list[str] = field(default_factory=list)
-    shell_can_unhide: bool = True
+    shell_can_unhide: bool = True  # False where `pm unhide` needs MANAGE_USERS (TCL AR10)
     install_package: str = "io.github.brijrokad.zentv.spike"  # what the next `adb install` adds
-    service_labels: dict[str, str] = field(
-        default_factory=dict
-    )  # False on builds where `pm unhide` needs MANAGE_USERS (TCL AR10)
+    service_labels: dict[str, str] = field(default_factory=dict)
+    wifi_entries: list[dict] = field(default_factory=list)  # {id, hidden, status, creator, recent}
+    wifi_connected: int = -1
     log: list[str] = field(default_factory=list)
 
     # ---- transport protocol ----
@@ -117,6 +117,24 @@ class FakeDevice:
                     "  NetworkAgentInfo{ ni{[type: ETHERNET[], state: DISCONNECTED]}  network{90}\n"
                     "      NetworkRequest [ BACKGROUND_REQUEST id=2, [ Transports: CELLULAR ] ]\n"
                 )
+            case ["dumpsys", "wifi"] if self.wifi_entries:
+                lines = []
+                for e in self.wifi_entries:
+                    dis = "- DSBLE " if e["status"].endswith("DISABLED") else ""
+                    lines += [
+                        f'{dis}ID: {e["id"]} SSID: "HomeNet" PROVIDER-NAME: null '
+                        f"HIDDEN: {e['hidden']} PMF: false",
+                        f" NetworkSelectionStatus {e['status']}",
+                        f" cuid=1000 cname={e['creator']} luid=1000 allowAutojoin=true "
+                        f"mostRecentlyConnected={e['recent']} ",
+                    ]
+                return (
+                    "\n".join(lines)
+                    + f"\nmPerId={{}}\nmWifiInfo SSID: HomeNet, Net ID: {self.wifi_connected}\n"
+                )
+            case ["cmd", "wifi", "forget-network", nid]:
+                self.wifi_entries = [e for e in self.wifi_entries if str(e["id"]) != nid]
+                return "Forget successful\n"
             case ["dumpsys", "wifi"]:
                 return (
                     f'WifiConfiguration: SSID: "HomeNet-5G" BSSID: aa:bb:cc:dd:ee:ff\n'

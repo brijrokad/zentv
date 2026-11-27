@@ -12,7 +12,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, adbclose, device, launcher, paths, privacy, redact, safety, smoke, survey
+from . import __version__, adbclose, device, launcher, paths, privacy, redact, safety, smoke, survey, wifi
 from . import apply as engine
 from . import plan as planner
 from . import snapshot as snapshots
@@ -360,6 +360,33 @@ def cmd_launcher(args: argparse.Namespace) -> int:
     raise ZenError(f"unknown launcher action {action}")
 
 
+def cmd_wifi(args: argparse.Namespace) -> int:
+    c = Ctx(args, yes=getattr(args, "yes", False))
+    try:
+        if args.wifi_action == "list":
+            found, connected = wifi.entries(c.session)
+            for i, e in sorted(found.items()):
+                tag = "  <- in use" if i == connected else ""
+                print(f"ID {i}: hidden={e['hidden']} status={e['status']} creator={e['creator']}{tag}")
+            return 0
+        prof = _need_profile(c)
+        debloat = planner.load_debloat(Path(prof.path).parent / "debloat.yaml", prof)
+        approved = frozenset(int(i) for i in debloat.get("wifi_forget_approved") or [])
+        ids = args.id or sorted(approved)
+        cmds = wifi.forget(c.session, ids, approved)
+        if not args.yes:
+            print("DRY RUN (nothing sent). NOT reversible. With --yes zentv would run:")
+            for cmd in cmds:
+                print(
+                    f"  adb shell {cmd.shell_string()}    # was: {c.session.recorded.get(cmd.records[0].key)}"
+                )
+            return 0
+        print(f"forgot {len(cmds)} stale Wi-Fi entr{'y' if len(cmds) == 1 else 'ies'} (read back).")
+        return 0
+    finally:
+        c.write_log(f"wifi-{args.wifi_action}")
+
+
 # ---- parser ----------------------------------------------------------------------------------
 
 
@@ -452,6 +479,18 @@ def build_parser() -> argparse.ArgumentParser:
     lr.add_argument("--yes", action="store_true")
     lsub.add_parser("status", help="read-only: installed, helper enabled/bound, TCL app-op")
     s.set_defaults(func=cmd_launcher)
+
+    s = sub.add_parser("wifi", help="saved Wi-Fi entries (names never shown)")
+    wsub = s.add_subparsers(dest="wifi_action", required=True)
+    wsub.add_parser("list", help="read-only list of saved entries")
+    wf = wsub.add_parser(
+        "forget", help="remove owner-approved stale entries (debloat.yaml wifi_forget_approved)"
+    )
+    wf.add_argument(
+        "--id", type=int, action="append", help="entry id (must be approved); default: all approved"
+    )
+    wf.add_argument("--yes", action="store_true")
+    s.set_defaults(func=cmd_wifi)
 
     s = sub.add_parser(
         "smoke-test", help="interactive checklist from the device profile; any failure means restore"

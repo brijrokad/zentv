@@ -67,6 +67,10 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
      - `zentv launcher revert` restores each recorded mode, runs `appops write-settings`, and reads the modes back. A mismatch fails loudly.
      - It's never re-applied. If TCL resets the op, zentv reports the drift and does nothing else (rules 5 and 8).
      - The placeholder TV-input trick (`SECURITY_AUDIT.md` D-CT-06), and any other way around TCL's boot manager, stays forbidden.
+   - **One-time Wi-Fi exception (owner, 2026-11-27, TCL only):** `cmd wifi forget-network <id>` for exactly the saved entries listed under `wifi_forget_approved` in the device's `debloat.yaml`.
+     - Never the connected network, nor one marked most-recently-connected.
+     - Pre-state recorded without network names, dry-run first, `--yes`, read back.
+     - **Not reversible.** The network can be re-added in Settings.
    - **zentv's own APK (Checkpoint 3, D5):** `adb install -r` of an APK whose package is one of zentv's own (checked locally with aapt2 first), through Android's normal install path. Never `-g`, `-t` or any bypass flag. zentv never uninstalls: the owner removes zentv in Settings → Apps.
    - **Approved at Checkpoint 4 (2026-11-26): undo a `pm hide` found on the TV. Not usable on the TCL (AR10):** the shell lacks `MANAGE_USERS` for `pm unhide`, and the apps were hidden by Google TV's setup, not by a tool. The exception stays defined for builds whose shell may un-hide. The TCL arrived with packages hidden by an earlier tool. The owner chose to restore `com.google.android.apps.mediashell` and `com.google.android.katniss`. Proposed exception:
      - `pm unhide` of **exactly the packages listed under `restore_hidden` in the device's `debloat.yaml`**.
