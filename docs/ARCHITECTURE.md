@@ -209,6 +209,12 @@ Exit 0 only when everything reads closed. Every TV session ends with it (rule 10
   - `HomeKeyService` in `android:process=":homekey"`: key filter only, `canRetrieveWindowContent=false`, no event types beyond what key filtering needs.
   - `ForegroundProbe` (in `:homekey`): `ActivityManager.getRunningAppProcesses()` filtered to zentv's own UI process, checking `IMPORTANCE_FOREGROUND`. The fallback is a binder `ZentvStateService` in the UI process, protected by a `signature`-level custom permission.
   - `CrashGuard`: an uncaught-exception handler writes a crash record to app storage. A start with no "settled" mark within N seconds counts as unsettled. Two of those in 3 minutes means step aside to the stock home for 5 minutes. A process death with no crash record (a vendor trim, LMK) isn't counted.
+  - `InputTiles` (approved 2026-11-27): HDMI inputs come from `TvInputManager`, plus the HDMI-CEC device on each port.
+    - The tile **label is the port only** (`HDMI 1`, `HDMI 2`, …).
+    - The **icon** is the owner's private logo from `launcher/local-icons/` (git-ignored, packed only into the owner's local build) when the CEC name matches PlayStation, Xbox or Nintendo.
+    - Otherwise the icon is zentv's fallback: a controller glyph with the console's short name (`PS5`, `XBOX`, `SWITCH`) underneath, drawn as one icon.
+    - A plain input with no CEC device gets an HDMI-port glyph.
+    - No trademarked artwork is ever committed.
   - `ThemeStore`: JSON themes bundled in assets, plus an optional import folder in app-specific storage (decision D6).
 - **No boot receiver, no notification listener, no `WRITE_SECURE_SETTINGS`, no `READ_TV_LISTINGS`, no location.**
 - **CI checks the merged manifest of `coreRelease`.** It fails if any permission outside an allowlist appears. The allowlist starts empty: the accessibility binding is a `permission=` attribute, not a uses-permission.

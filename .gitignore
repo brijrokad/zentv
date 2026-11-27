@@ -50,3 +50,8 @@ launcher/build/
 launcher/app/build/
 launcher/local.properties
 launcher/.kotlin/
+
+# Private console logos (PlayStation, Xbox, Nintendo): trademarked artwork, owner-supplied, never committed.
+# Only the README stays tracked. Builds include these files in the owner's own APK only.
+launcher/local-icons/*
+!launcher/local-icons/README.md
