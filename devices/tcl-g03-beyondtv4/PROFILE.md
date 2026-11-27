@@ -2,7 +2,7 @@
 
 Source: `ZENTV_BUILD_PROMPT.md` v3, "Device profile: TCL 75S450G". **Phase 3 ran on 2026-11-26, read-only**, with `zentv identify`, `zentv survey` (redacted, [`survey.json`](survey.json)), read-only `adb` queries, a remote key log while the owner pressed buttons, and a passive Bonjour browse from the Mac. It ended with `zentv adb-close --yes` (port 5555 verified closed). Nothing on the TV was changed except switching debugging off.
 
-**Profile status: `unverified` until the owner approves it at Checkpoint 4** (`profile.yaml` has the live `match` block and fingerprint; only then is it set to `confirmed`).
+**Profile status: `confirmed` at Checkpoint 4 (2026-11-26) for firmware AR10.** A different fingerprint makes zentv read-only again. Approved plan: disable `gtvpai`, `com.tcl.dashboard` and `com.tcl.ocean.instructions`, and un-hide `mediashell` and `katniss`.
 
 **Directory name.** The live TV reports `ro.product.device=BeyondTV4`, `ro.product.name=G03_4K_US_NF_DB`, so `tcl-g03-beyondtv4` stands.
 
@@ -26,7 +26,7 @@ Source: `ZENTV_BUILD_PROMPT.md` v3, "Device profile: TCL 75S450G". **Phase 3 ran
 | 7 | Network: Wi-Fi today | **verified**: active transport `WIFI`. Saved-network owners include `android.uid.system`, `com.android.tv.settings` **and `setupwraith`**. | `dumpsys connectivity`, `dumpsys wifi` |
 | 8 | Ethernet must stay usable | requirement, **not checked** (no `ip link` read). All Wi-Fi/Ethernet/network-stack packages are refused. | `never_disable.yaml` |
 | 9 | Tuner/antenna and HDMI in use | **verified, inputs present**: `com.tcl.tvinput` tuner (`TDTVInputService`) + 5 HDMI pass-through inputs. Also app inputs from Fubo, Sling, ZEE5. Whether channels are scanned wasn't checked. | `dumpsys tv_input` |
-| 10 | TCL remote incl. voice | **partly**: remote buttons work (key log). The **mic press logged `BTRemoterRcUnConnect`**, so the remote isn't paired over Bluetooth, and `katniss` (voice) is **hidden**. Voice needs both fixed. | key log, survey |
+| 10 | TCL remote incl. voice | **partly**: remote buttons work (key log). The **mic press logged `BTRemoterRcUnConnect`**, so the remote isn't paired over Bluetooth, and `katniss` (voice) is **hidden**. Voice needs both fixed. **Owner reports the remote is now paired** (to be verified read-only next session). | key log, survey, owner |
 | 11 | Google TV phone remote | **verified**: `tv.remote.service` enabled, advertised over mDNS as `_androidtvremote2._tcp` "Living Room TV" (`device_name`) | Bonjour browse, `settings get global device_name` |
 | 12 | Chromecast built-in | **broken now**: `com.google.android.apps.mediashell` is **hidden** (`pm hide`, by an earlier tool). The TV doesn't advertise `_googlecast._tcp` (only a Nest Mini does). | survey `absent_for_user`, Bonjour |
 | 13 | AirPlay / HomeKit | **not supported**: no package, no `_airplay`/`_hap` advert. Dropped by the owner. | survey, Bonjour |

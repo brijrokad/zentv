@@ -67,7 +67,7 @@ Saved as `devices/tcl-g03-beyondtv4/PROFILE.md`. Confirm each line in Phase 3. T
      - `zentv launcher revert` restores each recorded mode, runs `appops write-settings`, and reads the modes back. A mismatch fails loudly.
      - It's never re-applied. If TCL resets the op, zentv reports the drift and does nothing else (rules 5 and 8).
      - The placeholder TV-input trick (`SECURITY_AUDIT.md` D-CT-06), and any other way around TCL's boot manager, stays forbidden.
-   - **Pending at Checkpoint 4: undo another tool's `pm hide`.** The TCL arrived with packages hidden by an earlier tool. The owner chose to restore `com.google.android.apps.mediashell` and `com.google.android.katniss`. Proposed exception:
+   - **Approved at Checkpoint 4 (2026-11-26): undo another tool's `pm hide`.** The TCL arrived with packages hidden by an earlier tool. The owner chose to restore `com.google.android.apps.mediashell` and `com.google.android.katniss`. Proposed exception:
      - `pm unhide` of **exactly the packages listed under `restore_hidden` in the device's `debloat.yaml`**.
      - The hidden state is recorded first, shown in the dry-run, sent only with `--yes`, and read back.
      - Not reversed by `restore`, because re-hiding would need `pm hide`, which stays forbidden.

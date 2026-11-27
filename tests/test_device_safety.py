@@ -67,9 +67,12 @@ def test_profile_selection(tmp_path, tcl):
         device.select_profile(device.load_profiles(root), ident)
 
 
-def test_repo_profiles_are_unverified_before_phase3():
+def test_repo_profiles_confirmed_only_with_live_match_and_fingerprint():
     for p in device.load_profiles(paths.devices_dir()):
-        assert p.status == "unverified", f"{p.name} must stay unverified until Phase 3"
+        if p.status == "confirmed":
+            assert p.match and p.fingerprint, f"{p.name} is confirmed without a match block and fingerprint"
+        else:
+            assert p.status == "unverified"
 
 
 # ---- policy file -----------------------------------------------------------------------------

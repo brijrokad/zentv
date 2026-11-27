@@ -107,9 +107,10 @@ def test_cli_identify_is_read_only_and_redacted(fake_adb, tcl, capsys):
     state = fake_adb(tcl)
     assert cli.main(["identify"]) == 0
     out = json.loads(capsys.readouterr().out)
-    # The fake matches the real profile's match block; the profile is unverified, so still read-only.
+    # The fake matches the real profile's match block, but it reports AR24 firmware while the profile
+    # was confirmed on AR10: the gate must keep the TV read-only.
     assert out["profile"] == "tcl-g03-beyondtv4"
-    assert out["state_changes"] == "read-only" and "unverified" in out["why"]
+    assert out["state_changes"] == "read-only" and "fingerprint" in out["why"]
     assert SYNTH_TCL_SERIAL not in json.dumps(out)
     assert json.loads(state.read_text())["settings"] == tcl.settings
 

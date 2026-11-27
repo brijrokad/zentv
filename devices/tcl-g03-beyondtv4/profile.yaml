@@ -1,7 +1,7 @@
 # Machine-readable profile (docs/ARCHITECTURE.md §4). PROFILE.md is the human record.
-# Phase 3 (2026-11-26) read match + fingerprint from the live TV. status stays `unverified` until the
-# owner approves this profile at Checkpoint 4; only then may zentv change anything on this TV.
-status: unverified
+# Phase 3 (2026-11-26) read match + fingerprint from the live TV. The owner confirmed it at Checkpoint 4
+# (2026-11-26). Any other firmware fingerprint makes zentv read-only on this TV again.
+status: confirmed
 brand: tcl
 soc: realtek
 match:
