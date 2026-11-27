@@ -201,24 +201,27 @@ Exit 0 only when everything reads closed. Every TV session ends with it (rule 10
 - **Flavours:**
   - `core`: no `INTERNET`, the default.
   - `weather`: adds `INTERNET`, plus a `networkSecurityConfig` that allows only the Open-Meteo hosts, with cleartext off.
-- **Build type `spike`** for M3a: just the helper and a test activity.
+- **Build type `spike`** for M3a (retired in M4: its helper became `HomeKeyService`; the code stays in git history and `docs/spikes/M3a-tcl-home-key.md`).
 - **SDK:** `minSdk 30`, `targetSdk` ≥ 30, Kotlin + Views. No AndroidX beyond what's justified (`recyclerview` at most). No coroutines, no NDK.
 - **Components:**
-  - `MainActivity`: `MAIN`+`HOME`+`DEFAULT` and `LEANBACK_LAUNCHER`.
+  - `MainActivity`: `MAIN` + `LEANBACK_LAUNCHER`/`LAUNCHER`. The `HOME` filter sits on an activity-alias `.Home` that is **off by default**: on the TCL Home reaches zentv through the helper (consume mode), so there is never a second HOME app for the system to ask about. `launcher set-home` turns the alias on only for TVs that honour `set-home-activity`.
+  - `AllAppsActivity`: six-column grid over the scene's `-glass` layer (110%, saturation 1.25) under a 20–80% tint; hold OK for favourite / move / hide; a footer toggles hidden apps.
+  - `SceneView`: scene → frosted-glass or tall clock → cut-out → flip or analog clock → date → scrim, all on Canvas. Scenes follow the time of day (dawn 05–08, water 08–16, golden 16–19, night) unless one is chosen in zentv settings. Only the 1080p scene files ship: the UI renders at 1920×1080, and the 4K copies would add ~8 MB and four times the bitmap memory on a 2 GB TV.
   - `AppCatalog`: `PackageManager` query for `LEANBACK_LAUNCHER`. Package visibility comes from `<queries><intent>` for the launcher intents, not `QUERY_ALL_PACKAGES`.
   - `HomeKeyService` in `android:process=":homekey"`: key filter only, `canRetrieveWindowContent=false`, no event types beyond what key filtering needs.
   - `ForegroundProbe` (in `:homekey`): `ActivityManager.getRunningAppProcesses()` filtered to zentv's own UI process, checking `IMPORTANCE_FOREGROUND`. The fallback is a binder `ZentvStateService` in the UI process, protected by a `signature`-level custom permission.
   - `CrashGuard`: an uncaught-exception handler writes a crash record to app storage. A start with no "settled" mark within N seconds counts as unsettled. Two of those in 3 minutes means step aside to the stock home for 5 minutes. A process death with no crash record (a vendor trim, LMK) isn't counted.
   - `InputTiles` (approved 2026-11-27): HDMI inputs come from `TvInputManager`, plus the HDMI-CEC device on each port.
     - The tile **label is the port only** (`HDMI 1`, `HDMI 2`, …).
-    - The **icon** is the owner's private logo from `launcher/local-icons/` (git-ignored, packed only into the owner's local build) when the CEC name matches PlayStation, Xbox or Nintendo.
+    - The **icon** is the owner's private logo from `launcher/local-icons/` (git-ignored; the `copyLocalIcons*` task copies PNG/WebP/JPG as-is into `assets/consoles/`, since Android decodes all three; `-Pzentv.localIcons=false` leaves them out) when the CEC name matches PlayStation, Xbox or Nintendo.
     - Otherwise the icon is zentv's fallback: a controller glyph with the console's short name (`PS5`, `XBOX`, `SWITCH`) underneath, drawn as one icon.
     - A plain input with no CEC device gets an HDMI-port glyph.
     - No trademarked artwork is ever committed.
   - `ThemeStore`: JSON themes bundled in assets, plus an optional import folder in app-specific storage (decision D6).
 - **No boot receiver, no notification listener, no `WRITE_SECURE_SETTINGS`, no `READ_TV_LISTINGS`, no location.**
-- **CI checks the merged manifest of `coreRelease`.** It fails if any permission outside an allowlist appears. The allowlist starts empty: the accessibility binding is a `permission=` attribute, not a uses-permission.
-- **Signing:** a release key you generate, kept in `~/.zentv/keys/`, never in the repo. CI builds debug and unsigned release only.
+- **CI checks the built APKs** (`aapt2 dump permissions`): `coreRelease` must have no uses-permission at all, `weatherRelease` exactly `INTERNET`; neither may contain `.so` files or `assets/consoles/`; `coreRelease` must stay under 3 MB. The accessibility binding is a `permission=` attribute, not a uses-permission.
+- **Weather:** `WeatherProvider` exists in two flavour source sets. The core one is a stub with no network code; the weather one talks only to `api.open-meteo.com` and `geocoding-api.open-meteo.com`, enforced in `OpenMeteo.checked` (HTTPS, host allowlist, port 443, no credentials) and unit-tested, because Android's network security config cannot block hosts. No location permission: the owner types a town once.
+- **Signing:** a release key you generate, kept in `~/.zentv/keys/` (`release.properties` + keystore), never in the repo. The Gradle build signs release APKs with it only if that file exists. CI builds unsigned release APKs only.
 
 ## 7. Milestones and acceptance criteria
 
@@ -230,8 +233,8 @@ I propose two changes to the prompt's sequence: **`survey` and `adb-close` move 
 | — | 3 | Device discovery, **TCL first**, then Sony (read-only, `survey` + `adb-close`) | Each profile has confirmed `match` + fingerprint, a feature map, a Wi-Fi owner, the tuner state, and on TCL the app-op names and app-button keycodes. Redacted `survey.json` committed. Draft `debloat.yaml` with every disagreement with cleanyourtv explained. **⛔ Checkpoint 4.** |
 | **M2** | 4 | `plan`, `snapshot`, `apply`, `restore`, `check`, `smoke-test` | All §5 round-trip, snapshot, gate and refusal tests pass. Then the supervised run per TV, TCL first: snapshot → dry-run → OK → apply → reboot → smoke test → `adb-close`. Smoke tests pass on both TVs. A restore rehearsal on each TV reads back clean. The restore command is shown before we finish. |
 | **M3** | 5 | **M3a spike** per TV, TCL first: `spike` APK, helper in `:homekey`, test activity | A written spike report per TV, a results matrix over every M3a test in the prompt (real-remote Home, background race with and without re-check, held Volume, TCL `com.tcl.guard` package-vs-process kill and `:homekey` survival, consume vs pass-through, TCL with and without the app-op), and a go/no-go per TV. A no-go stops work for that TV and brings options. |
-| **M4** | 5 | Launcher MVP: app row/grid, favorites, hide, `set-home`, `enable-home-key` (with TCL app-op), CrashGuard, `revert`, `docs/launcher-permissions.md` | `coreRelease` APK < 2 MB. Cold start < 500 ms (`am start -W`, median of 5) on both TVs. The merged-manifest check passes (no `INTERNET`). `revert` reads back HOME, accessibility and app-ops clean on both TVs. CrashGuard unit tests (including "trim kill isn't a crash"). Launcher smoke test passes per TV. |
-| **M5** | 5 | Finish: scene + cut-out, glass clock, pills, themes JSON, `weather` flavour, keep-watching without `READ_TV_LISTINGS` | `core` still has no `INTERNET` and stays < 2 MB. `weather` reaches only Open-Meteo (network security config + test). No jank regression against M4 (`dumpsys gfxinfo`, janky-frame share). |
+| **M4** | 5 | Launcher MVP: app row/grid, favorites, hide, `set-home`, `enable-home-key` (with TCL app-op), CrashGuard, `revert`, `docs/launcher-permissions.md` | `coreRelease` APK < 3 MB (revised 2026-11-27: the five reused 1080p scenes are ~2.0 MB of already-compressed JPEG/WebP). Cold start < 500 ms (`am start -W`, median of 5) on both TVs. The merged-manifest check passes (no `INTERNET`). `revert` reads back HOME, accessibility and app-ops clean on both TVs. CrashGuard unit tests (including "trim kill isn't a crash"). Launcher smoke test passes per TV. |
+| **M5** | 5 | Finish: scene + cut-out, glass clock, pills, themes JSON, `weather` flavour, keep-watching without `READ_TV_LISTINGS` | `core` still has no `INTERNET` and stays < 3 MB. `weather` reaches only Open-Meteo (network security config + test). No jank regression against M4 (`dumpsys gfxinfo`, janky-frame share). |
 | **M6** | 7 | `bench` across three states per TV; `docs/restore.md`, `troubleshooting.md`, `smoke-test.md`; README table | 3 runs per state, median reported. The table is in the README. Docs walk through restore from a fresh shell on each TV. |
 
 ## 8. Decisions for Checkpoint 3
