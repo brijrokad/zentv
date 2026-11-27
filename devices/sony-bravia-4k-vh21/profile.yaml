@@ -1,0 +1,8 @@
+# Machine-readable profile (docs/ARCHITECTURE.md §4). PROFILE.md is the human record.
+# Phase 3 fills match + fingerprint from the live TV and sets status: confirmed.
+# Until then zentv is read-only on this TV (only survey, privacy, identify, safety, adb-close).
+status: unverified
+brand: sony
+soc: mediatek          # expected; Phase 3 confirms from ro.board.platform
+match: {}        # e.g. {ro.product.device: ..., ro.product.name: ...}
+fingerprint: null

@@ -1,0 +1,91 @@
+# TCL 75S450G — debloat plan, APPROVED at Checkpoint 4 (2026-11-26). Apply = the three targets marked
+# `owner: approved: disable` + restore_hidden. Nothing here has been applied yet. Evidence: devices/tcl-g03-beyondtv4/survey.json (read-only, redacted),
+# the remote key log (read-only), and cleanyourtv @ be608705 lists read as data:
+#   examples/tcl-55s450g (same product G03_4K_US_NF_DB, AR24), tcl-55s546-us (GTV93), tcl-g03-google-tv.
+#
+# Starting state (NOT made by zentv; recorded so restore never "undoes" it):
+#   disabled: com.google.android.feedback, .onetimeinitializer, .partnersetup, .syncadapters.calendar,
+#             com.tcl.bi, com.tcl.esticker, com.tcl.guard, com.tcl.waterfall.overseas
+#             (lastDisabledCaller: shell, so an ADB tool disabled these before zentv)
+#   hidden by Google TV's own setup (lastDisabledCaller: com.google.android.tungsten.setupwraith; some
+#             also enabled=2): mediashell, katniss, play.games, videos, youtube.tvmusic, com.tcl.assistant,
+#             com.tcl.gallery, com.tcl.messagebox, com.tcl.smartalexa, com.tcl.usercenter
+# Most of what the reference lists remove is therefore already off. This plan is the remainder.
+
+schema: 1
+device: tcl-g03-beyondtv4
+fingerprint: TCL/G03_4K_US_NF_DB/BeyondTV4:11/RP1A.200622.001/AR10:user/release-keys
+
+targets:
+  - package: android.autoinstalls.config.google.gtvpai
+    reason: "Silently installs partner apps."
+    risk: low
+    default: on
+    source: "survey: enabled, system; cleanyourtv tcl-55s450g, tcl-55s546-us, tcl-g03-google-tv (as data)"
+    owner: "approved: disable (2026-11-26)"
+
+  - package: com.tcl.dashboard
+    reason: "TCL dashboard / promo backend."
+    risk: low
+    default: on
+    source: "survey: enabled; all three reference lists"
+    owner: "approved: disable (2026-11-26)"
+
+  - package: com.tcl.ocean.instructions
+    reason: "On-screen e-manual. Re-enable from Settings > Apps if ever needed."
+    risk: low
+    default: on
+    source: "survey: enabled; all three reference lists"
+    owner: "approved: disable (2026-11-26)"
+
+  - package: com.tcl.partnercustomizer
+    reason: "Partner customisation and promo rows. CAUTION: the key log shows the remote's Apple TV and TCL Channel buttons route through it (googletvcustomer://com.tcl.partnercustomizer/..., .tkey.TKeyActivity); both stop working if it is off."
+    risk: medium
+    default: off
+    source: "survey + key log 2026-11-26; all three reference lists disable it"
+    owner: "keep enabled (2026-11-26)"
+
+  - package: com.tcl.ui_mediaCenter
+    reason: "USB media player. Off only if you never play files from a USB drive."
+    risk: medium
+    default: off
+    source: "survey: enabled; tcl-g03-google-tv"
+    owner: "keep enabled (2026-11-26)"
+
+  - package: com.google.android.marvin.talkback
+    reason: "TalkBack screen reader, not in use. Small gain; it does not run unless switched on."
+    risk: low
+    default: off
+    source: "survey: enabled; off by choice on a 65P735 (tcl-g03-google-tv notes)"
+    owner: "keep enabled (2026-11-26)"
+
+# Owner decision (2026-11-26): restore casting (mediashell) and voice (katniss). NOT POSSIBLE over ADB on
+# this build: the supervised run (2026-11-27) got `SecurityException: ... MANAGE_USERS` for
+# `pm unhide` from the shell. The apps were hidden by Google TV's setup (setupwraith), and only a
+# privileged app can un-hide them. So restore_hidden is empty and zentv leaves them as found.
+# Options are outside zentv (see PROFILE.md line 17).
+restore_hidden: []
+
+# Not proposed, with the reason, including every disagreement with the reference lists:
+not_proposed:
+  com.google.android.apps.tv.launcherx: "Rule 7 (stock home). tcl-55s450g disables it; zentv never does."
+  com.google.android.tungsten.setupwraith: "Rule 7; it also owns one saved Wi-Fi network here. All three lists disable it."
+  org.chromium.webview_shell: "Refused by the *webview* rule (safe side). Two reference lists disable it."
+  com.tcl.android.webview: "Refused by the *webview* rule. Two reference lists disable it."
+  com.tcl.xian.StartandroidService: "Protected: TCL's firmware updater needs it (owner decision). Two lists disable it."
+  com.google.android.apps.tv.dreamx: "Protected: Google Home panel in use. All three lists disable it."
+  com.google.android.tv.assistant: "Protected: voice. tcl-g03-google-tv disables it."
+  com.tcl.keyhelp: "Protected: remote virtual keys."
+  com.tcl.guard: "Already disabled, but a com.tcl.guard process (TGuard memory manager) still runs, so there is nothing more to gain; noted for the M3a test."
+  com.tcl.copydatatotv: "Unclear purpose, not in the reference lists. Left alone."
+  com.tcl.useragreement: "Unclear or small gain (reference notes leave it). Left alone."
+  com.google.android.apps.nbu.smartconnect.tv: "Data saver / VPN client; reference notes leave it. Left alone."
+  user_apps: "Streaming apps you installed (Netflix, YouTube, Prime, Hulu, Sling, Fubo, Disney+, Max, Paramount+, ESPN, ZEE5) are yours, not targets."
+  com.tcl.bootadservice: "Not on this build (owner's held decision is moot)."
+  com.tcl.usercenter: "Already hidden by an earlier tool; zentv leaves it as found (risk: high stays for other TCLs)."
+
+# One-time owner approval (2026-11-27): delete these stale saved Wi-Fi entries, which Settings can't
+# show (two hidden copies, one created by Google TV setup and preferred as "connect choice", plus one
+# disabled for a wrong password). Wi-Fi didn't rejoin after any restart, with or without zentv's
+# debloat. NOT reversible; the network in use is always refused. `zentv wifi forget`.
+wifi_forget_approved: [0, 1, 2]

@@ -1,0 +1,23 @@
+# Machine-readable profile (docs/ARCHITECTURE.md §4). PROFILE.md is the human record.
+# Phase 3 (2026-11-26) read match + fingerprint from the live TV. The owner confirmed it at Checkpoint 4
+# (2026-11-26). Any other firmware fingerprint makes zentv read-only on this TV again.
+status: confirmed
+brand: tcl
+soc: realtek
+match:
+  ro.product.device: BeyondTV4
+  ro.product.name: G03_4K_US_NF_DB
+fingerprint: TCL/G03_4K_US_NF_DB/BeyondTV4:11/RP1A.200622.001/AR10:user/release-keys
+# Smoke test (ZENTV_BUILD_PROMPT.md, Phase 4). Any "n" means restore.
+# Casting and voice are left out: Google TV's setup hid them before zentv, and zentv can't un-hide
+# them on this build (PROFILE.md line 17). They didn't work before the run either.
+smoke:
+  - "TCL remote: Home, Back, D-pad and OK work"
+  - "Remote app buttons: Netflix, YouTube and Prime Video open their apps; gear opens quick settings; Input opens the source panel"
+  - "Held Volume Up/Down ramps the soundbar (HDMI ARC)"
+  - "Google TV phone remote connects to Living Room TV"
+  - "Google Home panel opens from quick settings and controls a light"
+  - "Live TV through the antenna plays, and an HDMI input plays"
+  - "Standby, then wake from the remote: the TV wakes without rebooting"
+  - "After a reboot, Wi-Fi reconnects on its own"
+  - "Ethernet links (answer s to skip if no cable is available)"

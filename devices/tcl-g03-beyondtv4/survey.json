@@ -1,0 +1,807 @@
+{
+  "schema": 1,
+  "zentv": "0.1.0",
+  "taken_utc": "2026-11-27T00:00:03Z",
+  "profile": null,
+  "identity": {
+    "ro.product.brand": "TCL",
+    "ro.product.manufacturer": "TCL",
+    "ro.product.model": "Smart TV",
+    "ro.product.device": "BeyondTV4",
+    "ro.product.name": "G03_4K_US_NF_DB",
+    "ro.product.board": "RTD2851M",
+    "ro.board.platform": "rtd288o",
+    "ro.hardware": "rtd288o",
+    "ro.build.fingerprint": "TCL/G03_4K_US_NF_DB/BeyondTV4:11/RP1A.200622.001/AR10:user/release-keys",
+    "ro.build.version.release": "11",
+    "ro.build.version.sdk": "30",
+    "ro.build.version.incremental": "AR10",
+    "ro.build.version.security_patch": "2023-03-05",
+    "ro.product.cpu.abilist": "armeabi-v7a,armeabi",
+    "ro.zygote": "zygote32",
+    "ro.tcl.product_type": "GTV"
+  },
+  "soc_guess": "realtek",
+  "home": {
+    "resolved": "com.google.android.apps.tv.launcherx/.home.HomeActivity",
+    "candidates": [
+      "com.google.android.apps.tv.launcherx/.home.HomeActivity",
+      "com.google.android.tungsten.setupwraith/.RecoveryActivity",
+      "com.android.tv.settings/.system.FallbackHome"
+    ]
+  },
+  "accessibility": {
+    "enabled_accessibility_services": null,
+    "accessibility_enabled": "0"
+  },
+  "adb": {
+    "adb_enabled": "1",
+    "adb_wifi_enabled": "0"
+  },
+  "network": {
+    "active_default": "116",
+    "active_transport": "WIFI",
+    "wifi_network_owners": [
+      "cname=android.uid.system:1000",
+      "cname=com.android.tv.settings",
+      "cname=com.google.android.tungsten.setupwraith"
+    ]
+  },
+  "tv_inputs": [
+    "com.fubo.firetv.screen/tv.fubo.devicePlatformContent.liveTv.service.FuboTvInputService",
+    "com.graymatrix.did/com.zee5.androidtv.pmr.live.TvInputService",
+    "com.sling/com.movenetworks.livetv.LiveTvInputService",
+    "com.tcl.tvinput/.TDTVInputService/HW1413742848",
+    "com.tcl.tvinput/.passthroughinput.TvPassThroughService/HDMI100004",
+    "com.tcl.tvinput/.passthroughinput.TvPassThroughService/HW1413743104",
+    "com.tcl.tvinput/.passthroughinput.TvPassThroughService/HW1413744128",
+    "com.tcl.tvinput/.passthroughinput.TvPassThroughService/HW1413744384",
+    "com.tcl.tvinput/.passthroughinput.TvPassThroughService/HW1413744640"
+  ],
+  "memory_kb": {
+    "MemTotal": 2097152,
+    "MemAvailable": 396084
+  },
+  "packages": {
+    "android": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "android.autoinstalls.config.google.gtvpai": {
+      "installer": null,
+      "uid": 10023,
+      "enabled": true,
+      "system": true
+    },
+    "com.amazon.amazonvideo.livingroom": {
+      "installer": "com.android.vending",
+      "uid": 10055,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.backupconfirm": {
+      "installer": null,
+      "uid": 10021,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.bluetooth": {
+      "installer": null,
+      "uid": 1002,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.camera2": {
+      "installer": null,
+      "uid": 10032,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.captiveportallogin": {
+      "installer": null,
+      "uid": 10041,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.certinstaller": {
+      "installer": null,
+      "uid": 10043,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.companiondevicemanager": {
+      "installer": null,
+      "uid": 10047,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.cts.ctsshim": {
+      "installer": null,
+      "uid": 10033,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.cts.priv.ctsshim": {
+      "installer": null,
+      "uid": 10028,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.dreams.basic": {
+      "installer": null,
+      "uid": 10031,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.dynsystem": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.externalstorage": {
+      "installer": null,
+      "uid": 10020,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.hotspot2.osulogin": {
+      "installer": null,
+      "uid": 10072,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.htmlviewer": {
+      "installer": null,
+      "uid": 10045,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.inputdevices": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.keychain": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.localtransport": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.location.fused": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.messaging": {
+      "installer": null,
+      "uid": 10063,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.networkstack.inprocess": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.networkstack.permissionconfig": {
+      "installer": null,
+      "uid": 1073,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.networkstack.tethering.inprocess": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.pacprocessor": {
+      "installer": null,
+      "uid": 10050,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.printspooler": {
+      "installer": null,
+      "uid": 10054,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.calendar": {
+      "installer": null,
+      "uid": 10018,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.contacts": {
+      "installer": null,
+      "uid": 10009,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.downloads": {
+      "installer": null,
+      "uid": 10012,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.media": {
+      "installer": null,
+      "uid": 10012,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.media.module": {
+      "installer": null,
+      "uid": 10073,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.settings": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.tv": {
+      "installer": null,
+      "uid": 10014,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.providers.userdictionary": {
+      "installer": null,
+      "uid": 10009,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.proxyhandler": {
+      "installer": null,
+      "uid": 10017,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.se": {
+      "installer": null,
+      "uid": 1068,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.settings.intelligence": {
+      "installer": null,
+      "uid": 10057,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.sharedstoragebackup": {
+      "installer": null,
+      "uid": 10016,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.shell": {
+      "installer": null,
+      "uid": 2000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.soundpicker": {
+      "installer": null,
+      "uid": 10012,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.statementservice": {
+      "installer": null,
+      "uid": 10022,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.systemui": {
+      "installer": null,
+      "uid": 10068,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.tethering.overlay": {
+      "installer": null,
+      "uid": 10007,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.tethering.overlay.gsi": {
+      "installer": null,
+      "uid": 10006,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.tv.settings": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.tv.settings.google.resoverlay": {
+      "installer": null,
+      "uid": 10000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.tv.settings.vendor.resoverlay": {
+      "installer": null,
+      "uid": 10004,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.vending": {
+      "installer": "com.android.vending",
+      "uid": 10030,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.vpndialogs": {
+      "installer": null,
+      "uid": 10026,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.wallpaperbackup": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.android.wifi.resources": {
+      "installer": null,
+      "uid": 10071,
+      "enabled": true,
+      "system": true
+    },
+    "com.cbs.ott": {
+      "installer": "com.android.vending",
+      "uid": 10075,
+      "enabled": true,
+      "system": false
+    },
+    "com.disney.disneyplus": {
+      "installer": "com.android.vending",
+      "uid": 10076,
+      "enabled": true,
+      "system": false
+    },
+    "com.espn.score_center": {
+      "installer": "com.android.vending",
+      "uid": 10083,
+      "enabled": true,
+      "system": false
+    },
+    "com.fubo.firetv.screen": {
+      "installer": "com.android.vending",
+      "uid": 10087,
+      "enabled": true,
+      "system": false
+    },
+    "com.google.android.apps.nbu.smartconnect.tv": {
+      "installer": null,
+      "uid": 10024,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.apps.tv.dreamx": {
+      "installer": "com.android.vending",
+      "uid": 10025,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.apps.tv.launcherx": {
+      "installer": "com.android.vending",
+      "uid": 10019,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.ext.services": {
+      "installer": null,
+      "uid": 10070,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.ext.shared": {
+      "installer": null,
+      "uid": 10046,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.feedback": {
+      "installer": null,
+      "uid": 10066,
+      "enabled": false,
+      "system": true
+    },
+    "com.google.android.gms": {
+      "installer": "com.android.vending",
+      "uid": 10011,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.gsf": {
+      "installer": null,
+      "uid": 10011,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.inputmethod.latin": {
+      "installer": "com.android.vending",
+      "uid": 10053,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.marvin.talkback": {
+      "installer": "com.android.vending",
+      "uid": 10039,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.modulemetadata": {
+      "installer": null,
+      "uid": 10064,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.onetimeinitializer": {
+      "installer": null,
+      "uid": 10065,
+      "enabled": false,
+      "system": true
+    },
+    "com.google.android.overlay.modules.ext.services": {
+      "installer": null,
+      "uid": 10002,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.overlay.modules.modulemetadata.forframework": {
+      "installer": null,
+      "uid": 10005,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.overlay.modules.permissioncontroller": {
+      "installer": null,
+      "uid": 10001,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.overlay.modules.permissioncontroller.forframework": {
+      "installer": null,
+      "uid": 10003,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.packageinstaller": {
+      "installer": null,
+      "uid": 10013,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.partnersetup": {
+      "installer": null,
+      "uid": 10067,
+      "enabled": false,
+      "system": true
+    },
+    "com.google.android.permissioncontroller": {
+      "installer": null,
+      "uid": 10074,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.sss.authbridge": {
+      "installer": null,
+      "uid": 10011,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.syncadapters.calendar": {
+      "installer": null,
+      "uid": 10036,
+      "enabled": false,
+      "system": true
+    },
+    "com.google.android.tts": {
+      "installer": "com.android.vending",
+      "uid": 10042,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.tungsten.setupwraith": {
+      "installer": "com.android.vending",
+      "uid": 10015,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.tv.assistant": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.tv.frameworkpackagestubs": {
+      "installer": null,
+      "uid": 10069,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.tv.remote.service": {
+      "installer": "com.android.vending",
+      "uid": 10010,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.webview": {
+      "installer": "com.android.vending",
+      "uid": 10040,
+      "enabled": true,
+      "system": true
+    },
+    "com.google.android.youtube.tv": {
+      "installer": "com.android.vending",
+      "uid": 10044,
+      "enabled": true,
+      "system": true
+    },
+    "com.graymatrix.did": {
+      "installer": "com.android.vending",
+      "uid": 10088,
+      "enabled": true,
+      "system": false
+    },
+    "com.hulu.livingroomplus": {
+      "installer": "com.android.vending",
+      "uid": 10077,
+      "enabled": true,
+      "system": false
+    },
+    "com.netflix.ninja": {
+      "installer": "com.android.vending",
+      "uid": 10062,
+      "enabled": true,
+      "system": true
+    },
+    "com.sling": {
+      "installer": "com.android.vending",
+      "uid": 10082,
+      "enabled": true,
+      "system": false
+    },
+    "com.tcl.android.webview": {
+      "installer": null,
+      "uid": 10061,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.autopair": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.bi": {
+      "installer": null,
+      "uid": 10060,
+      "enabled": false,
+      "system": true
+    },
+    "com.tcl.copydatatotv": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.dashboard": {
+      "installer": "com.android.vending",
+      "uid": 10035,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.esticker": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": false,
+      "system": true
+    },
+    "com.tcl.factory.view": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.guard": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": false,
+      "system": true
+    },
+    "com.tcl.initsetup": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.keyhelp": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.ocean.instructions": {
+      "installer": null,
+      "uid": 10052,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.partnercustomizer": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.providers.config": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.settings": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.suspension": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.system.server": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.tcl_bt_rcu_service": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.tv": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.tvinput": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.ui_mediaCenter": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.useragreement": {
+      "installer": null,
+      "uid": 10034,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.versionUpdateApp": {
+      "installer": null,
+      "uid": 1000,
+      "enabled": true,
+      "system": true
+    },
+    "com.tcl.waterfall.overseas": {
+      "installer": "com.android.vending",
+      "uid": 10056,
+      "enabled": false,
+      "system": true
+    },
+    "com.tcl.xian.StartandroidService": {
+      "installer": null,
+      "uid": 10058,
+      "enabled": true,
+      "system": true
+    },
+    "com.tvos": {
+      "installer": null,
+      "uid": 10008,
+      "enabled": true,
+      "system": true
+    },
+    "com.wbd.stream": {
+      "installer": "com.android.vending",
+      "uid": 10078,
+      "enabled": true,
+      "system": false
+    },
+    "org.chromium.webview_shell": {
+      "installer": null,
+      "uid": 10059,
+      "enabled": true,
+      "system": true
+    }
+  },
+  "absent_for_user": {
+    "com.google.android.apps.mediashell": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 0
+    },
+    "com.google.android.katniss": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 0
+    },
+    "com.google.android.play.games": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.google.android.videos": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.google.android.youtube.tvmusic": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 0
+    },
+    "com.tcl.assistant": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.tcl.gallery": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.tcl.messagebox": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.tcl.smartalexa": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    },
+    "com.tcl.usercenter": {
+      "installed": true,
+      "hidden": true,
+      "enabled_state": 2
+    }
+  },
+  "tcl_appop_names": {
+    "APP_AUTO_START": true,
+    "AUTO_START": false
+  }
+}

@@ -1,23 +1,51 @@
 [project]
 name = "zentv"
 version = "0.1.0"
-description = "Add your description here"
+description = "Make your Android TV calm again: debloat, block ads and telemetry, and swap in a fast, clutter-free launcher over Wi-Fi ADB. No root, fully reversible."
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "Brij Rokad", email = "brij.rokad@gmail.com" }
 ]
 requires-python = ">=3.15"
-dependencies = []
+# One runtime dependency (ARCHITECTURE.md D2): PyYAML, used only through yaml.safe_load.
+dependencies = [
+    "pyyaml>=6.0.2",
+]
 
 [project.scripts]
-zentv = "zentv:main"
+# The package is zenctl (ARCHITECTURE.md D1); the command people type is `zentv`.
+zentv = "zenctl.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "zenctl"
+module-root = ""
 
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
     "ruff>=0.17.4",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 110
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = [
+    "S603",  # subprocess with argv lists is the design; shell=True is never used (checked by S602/S604)
+    "S607",  # `adb` is resolved from PATH on purpose (Google platform-tools)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S104", "S105", "S106", "S108", "S311"]
